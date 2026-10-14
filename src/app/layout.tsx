@@ -1,5 +1,4 @@
 import './globals.css';
-import type { Metadata } from 'node_modules/@types/react'; // atau biarkan tanpa import types khusus jika error
 
 export const metadata = {
   title: 'SAHARA LENZ | Luxury Editorial Photography',
