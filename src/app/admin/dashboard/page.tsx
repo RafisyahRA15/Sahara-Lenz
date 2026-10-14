@@ -96,13 +96,46 @@ export default function AdminDashboard() {
     selectClient(selectedClient)
   }
 
+  // Fungsi saat Status Diubah (Termasuk Arsip/Selesai yang otomatis membersihkan storage)
   async function updateStatus(newStatus: string) {
     if (!selectedClient) return
+
+    if (newStatus === 'Completed') {
+      const confirmArsip = window.confirm(
+        'Arsipkan klien ini? Perhatian: Data pesanan akan masuk ke History, dan semua foto di galeri web akan dihapus otomatis untuk menghemat penyimpanan Supabase. Pastikan Anda sudah membackup foto ke Google Drive/Harddisk.'
+      )
+      if (!confirmArsip) return
+
+      // 1. Hapus file fisik dari Supabase Storage berdasarkan folder client id
+      // Mengambil daftar foto klien saat ini
+      const { data: clientPhotos } = await supabase.from('client_photos').select('file_url').eq('client_id', selectedClient.id)
+      
+      if (clientPhotos && clientPhotos.length > 0) {
+        const filePaths = clientPhotos.map(p => {
+          // Ekstrak path file setelah 'client-uploads/'
+          const parts = p.file_url.split('/client-uploads/')
+          return parts[1] || ''
+        }).filter(Boolean)
+
+        if (filePaths.length > 0) {
+          await supabase.storage.from('client-uploads').remove(filePaths)
+        }
+      }
+
+      // 2. Hapus data foto dari tabel database client_photos
+      await supabase.from('client_photos').delete().eq('client_id', selectedClient.id)
+    }
+
+    // 3. Update status klien di database
     await supabase.from('clients').update({ status: newStatus }).eq('id', selectedClient.id)
     setSelectedClient({ ...selectedClient, status: newStatus })
     fetchClients()
+
     if (newStatus === 'Completed') {
-      alert('Pesanan dipindahkan ke menu Riwayat (History).')
+      alert('Pesanan berhasil diarsipkan ke History dan penyimpanan Supabase telah dibersihkan!')
+      setPhotos([]) // Kosongkan tampilan foto di admin
+    } else {
+      alert(`Status berhasil diubah menjadi: ${newStatus}`)
     }
   }
 
@@ -140,10 +173,8 @@ export default function AdminDashboard() {
     }
   }
 
-  // Filter Klien Aktif vs Klien History (Completed)
   const activeClients = clients.filter(c => c.status !== 'Completed')
   const historyClients = clients.filter(c => c.status === 'Completed')
-
   const displayedClients = activeTabMenu === 'active' ? activeClients : historyClients
 
   return (
@@ -158,7 +189,7 @@ export default function AdminDashboard() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Sisi Kiri: Form Tambah Klien & Menu Daftar Klien (Aktif / History) */}
+          {/* Sisi Kiri: Form Tambah Klien & Menu Daftar Klien */}
           <div className="space-y-6">
             <div className="bg-[#F5F0E8]/5 p-6 rounded border border-[#B49A6C]/20">
               <h2 className="text-lg font-serif mb-4 text-[#B49A6C]">Tambah Klien Baru</h2>
@@ -176,7 +207,6 @@ export default function AdminDashboard() {
             </div>
 
             <div className="bg-[#F5F0E8]/5 p-6 rounded border border-[#B49A6C]/20">
-              {/* Tab Tombol Menu Daftar Klien & History */}
               <div className="flex border-b border-[#B49A6C]/30 mb-4 pb-2 gap-2">
                 <button 
                   onClick={() => { setActiveTabMenu('active'); setSelectedClient(null); }}
@@ -207,7 +237,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Sisi Kanan: Detail Klien, Arsip Foto, dan Tombol Status */}
+          {/* Sisi Kanan: Detail Klien */}
           <div className="lg:col-span-2 bg-[#F5F0E8]/5 p-6 rounded border border-[#B49A6C]/20">
             {selectedClient ? (
               <div>
@@ -219,52 +249,73 @@ export default function AdminDashboard() {
                     <p className="text-xs text-[#D9CBB8]/70 mt-1">Tautan Galeri: <a href={`/gallery/${selectedClient.token}`} target="_blank" className="text-[#B49A6C] underline">/gallery/{selectedClient.token}</a></p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button onClick={downloadAllSelectedPhotos} disabled={downloadingAll} className="bg-emerald-600 text-white px-3 py-2 text-xs uppercase tracking-wider font-medium rounded hover:bg-emerald-500">
-                      {downloadingAll ? 'Mengunduh...' : '📥 Download Pilihan'}
-                    </button>
-                    <button onClick={() => updateStatus('Final Published')} className="bg-[#B49A6C] text-[#242321] px-3 py-2 text-xs uppercase tracking-wider font-medium rounded">Publish Final</button>
-                    <button onClick={() => updateStatus('Completed')} className="bg-stone-600 text-white px-3 py-2 text-xs uppercase tracking-wider font-medium rounded hover:bg-stone-500">Arsip (Selesai)</button>
+                    {activeTabMenu === 'active' && (
+                      <>
+                        <button onClick={downloadAllSelectedPhotos} disabled={downloadingAll} className="bg-emerald-600 text-white px-3 py-2 text-xs uppercase tracking-wider font-medium rounded hover:bg-emerald-500">
+                          {downloadingAll ? 'Mengunduh...' : '📥 Download Pilihan'}
+                        </button>
+                        <button onClick={() => updateStatus('Final Published')} className="bg-[#B49A6C] text-[#242321] px-3 py-2 text-xs uppercase tracking-wider font-medium rounded">Publish Final</button>
+                        <button onClick={() => updateStatus('Completed')} className="bg-stone-600 text-white px-3 py-2 text-xs uppercase tracking-wider font-medium rounded hover:bg-stone-500">Arsip (Selesai)</button>
+                      </>
+                    )}
+                    {activeTabMenu === 'history' && (
+                      <span className="text-xs bg-emerald-900/50 text-emerald-300 px-3 py-2 rounded border border-emerald-500/30">
+                        ✓ Pesanan Selesai (File foto telah dibersihkan dari storage)
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {uploading && (
-                  <div className="mb-4 p-3 bg-[#B49A6C]/20 text-[#B49A6C] text-center text-xs rounded animate-pulse">
-                    Mengunggah foto ke galeri klien...
-                  </div>
-                )}
+                {activeTabMenu === 'active' && (
+                  <>
+                    {uploading && (
+                      <div className="mb-4 p-3 bg-[#B49A6C]/20 text-[#B49A6C] text-center text-xs rounded animate-pulse">
+                        Mengunggah foto ke galeri klien...
+                      </div>
+                    )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                  <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
-                    <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Mentah (Selection)</p>
-                    <input type="file" accept="image/*" multiple onChange={e => handleFileUpload(e, 'selection')} className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" />
-                  </div>
-                  <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
-                    <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Edit Final</p>
-                    <input type="file" accept="image/*" multiple onChange={e => handleFileUpload(e, 'final')} className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" />
-                  </div>
-                </div>
-
-                <h3 className="text-sm uppercase tracking-widest text-[#B49A6C] mb-2">Arsip Galeri Foto Klien (Ketuk untuk preview)</h3>
-                <p className="text-xs text-[#D9CBB8]/60 mb-4">Semua foto mentah dan foto final yang pernah diunggah tetap aman tersimpan di sini meskipun statusnya sudah Completed.</p>
-                
-                <div className="grid grid-cols-3 gap-4 max-h-[350px] overflow-y-auto pr-2">
-                  {photos.map(p => (
-                    <div 
-                      key={p.id} 
-                      onClick={() => setPreviewPhoto(p.file_url)}
-                      className={`relative rounded overflow-hidden border-2 cursor-pointer group transition-all ${p.is_selected ? 'border-emerald-500 scale-[0.98]' : 'border-transparent hover:border-[#B49A6C]'}`}
-                    >
-                      <img src={p.file_url} alt="Gallery Item" className="w-full h-36 object-cover group-hover:scale-105 transition-transform" />
-                      <div className="absolute bottom-1 left-1 bg-black/80 px-2 py-0.5 text-[10px] text-[#F5F0E8] rounded">
-                        {p.file_type.toUpperCase()} {p.is_selected ? '✓' : ''}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                      <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
+                        <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Mentah (Selection)</p>
+                        <input type="file" accept="image/*" multiple onChange={e => handleFileUpload(e, 'selection')} className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" />
+                      </div>
+                      <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
+                        <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Edit Final</p>
+                        <input type="file" accept="image/*" multiple onChange={e => handleFileUpload(e, 'final')} className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" />
                       </div>
                     </div>
-                  ))}
+                  </>
+                )}
+
+                <h3 className="text-sm uppercase tracking-widest text-[#B49A6C] mb-2">Galeri Foto Klien</h3>
+                <p className="text-xs text-[#D9CBB8]/60 mb-4">
+                  {activeTabMenu === 'active' ? 'Ketuk foto untuk preview.' : 'Foto pada klien di History telah dihapus otomatis untuk menghemat penyimpanan server.'}
+                </p>
+                
+                <div className="grid grid-cols-3 gap-4 max-h-[350px] overflow-y-auto pr-2">
+                  {photos.length === 0 ? (
+                    <div className="col-span-3 text-center py-12 text-[#D9CBB8]/40 text-xs italic">
+                      Tidak ada foto di galeri (sudah diarsipkan/dibersihkan).
+                    </div>
+                  ) : (
+                    photos.map(p => (
+                      <div 
+                        key={p.id} 
+                        onClick={() => setPreviewPhoto(p.file_url)}
+                        className={`relative rounded overflow-hidden border-2 cursor-pointer group transition-all ${p.is_selected ? 'border-emerald-500 scale-[0.98]' : 'border-transparent hover:border-[#B49A6C]'}`}
+                      >
+                        <img src={p.file_url} alt="Gallery Item" className="w-full h-36 object-cover group-hover:scale-105 transition-transform" />
+                        <div className="absolute bottom-1 left-1 bg-black/80 px-2 py-0.5 text-[10px] text-[#F5F0E8] rounded">
+                          {p.file_type.toUpperCase()} {p.is_selected ? '✓' : ''}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             ) : (
               <div className="text-center py-32 text-[#D9CBB8]/50 font-serif">
-                Pilih salah satu klien dari daftar Aktif atau History di sebelah kiri untuk melihat detail informasi dan arsip fotonya.
+                Pilih salah satu klien dari daftar Aktif atau History di sebelah kiri untuk melihat detail informasi ordernya.
               </div>
             )}
           </div>
