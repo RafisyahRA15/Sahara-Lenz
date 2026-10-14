@@ -32,7 +32,7 @@ export default function ServicesPage() {
           {servicesList.map((srv, idx) => (
             <div key={idx} className="p-8 border border-gold/20 bg-charcoal/50 flex flex-col justify-between">
               <div>
-                <span className="text-gold text-xs tracking-widest block mb-2">0{idx + 1} // SERVICE</span>
+                <span className="text-gold text-xs tracking-widest block mb-2">0{idx + 1} - SERVICE</span>
                 <h3 className="font-serif text-2xl text-ivory uppercase tracking-wider mb-3">{srv.title}</h3>
                 <p className="text-sand text-xs leading-relaxed font-light mb-6">{srv.desc}</p>
               </div>
