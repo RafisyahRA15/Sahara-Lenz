@@ -146,14 +146,27 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center">
-                    <p className="text-xs mb-2 text-[#D9CBB8]">Upload Foto Mentah (Selection)</p>
-                    <input type="file" onChange={e => handleFileUpload(e, 'selection')} className="text-xs text-[#D9CBB8]" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                  {/* Upload Foto Mentah dengan filter gambar */}
+                  <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
+                    <p className="text-xs mb-3 text-[#D9CBB8]">Upload Foto Mentah (Selection)</p>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={e => handleFileUpload(e, 'selection')} 
+                      className="text-xs text-[#D9CBB8] file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] hover:file:bg-[#F5F0E8] cursor-pointer" 
+                    />
                   </div>
-                  <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center">
-                    <p className="text-xs mb-2 text-[#D9CBB8]">Upload Foto Edit (Final)</p>
-                    <input type="file" onChange={e => handleFileUpload(e, 'final')} className="text-xs text-[#D9CBB8]" />
+
+                  {/* Upload Foto Edit Final dengan filter gambar */}
+                  <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
+                    <p className="text-xs mb-3 text-[#D9CBB8]">Upload Foto Edit (Final)</p>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={e => handleFileUpload(e, 'final')} 
+                      className="text-xs text-[#D9CBB8] file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] hover:file:bg-[#F5F0E8] cursor-pointer" 
+                    />
                   </div>
                 </div>
 
