@@ -72,7 +72,7 @@ export default function ClientGalleryPage() {
             {clientData?.client_name}
           </h1>
           <p className="text-sand text-xs tracking-widest uppercase">
-            Package: {clientData?.package_name} // Session: {clientData?.session_date}
+            Package: {clientData?.package_name} {/* Session: {clientData?.session_date} */}
           </p>
         </div>
 
