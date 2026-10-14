@@ -27,6 +27,7 @@ export default function ClientGalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'selection' | 'final'>('selection')
+  const [downloadingAll, setDownloadingAll] = useState(false)
 
   useEffect(() => {
     fetchClientAndPhotos()
@@ -83,6 +84,40 @@ export default function ClientGalleryPage() {
     }
   }
 
+  // Fungsi pintar agar klien bisa download semua foto final sekaligus dengan 1 klik tanpa file ZIP
+  async function downloadAllFinalPhotos() {
+    const finalPhotos = photos.filter(p => p.file_type === 'final')
+    if (finalPhotos.length === 0) return
+
+    setDownloadingAll(true)
+    alert(`Mengunduh ${finalPhotos.length} foto final ke perangkat Anda. Mohon tunggu sebentar...`)
+
+    try {
+      for (let i = 0; i < finalPhotos.length; i++) {
+        const photo = finalPhotos[i]
+        const response = await fetch(photo.file_url)
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `SAHARA_LENZ_Final_${i + 1}.jpg`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        
+        // Jeda kecil 300ms agar browser HP stabil
+        await new Promise(resolve => setTimeout(resolve, 300))
+      }
+      alert('Semua foto final berhasil diunduh!')
+    } catch (error) {
+      console.error('Gagal download massal:', error)
+      alert('Terjadi kendala saat mengunduh foto.')
+    } finally {
+      setDownloadingAll(false)
+    }
+  }
+
   if (loading) {
     return <div className="min-h-screen bg-[#242321] text-[#F5F0E8] flex items-center justify-center font-serif">Memuat galeri eksklusif Anda...</div>
   }
@@ -127,7 +162,7 @@ export default function ClientGalleryPage() {
               <p className="text-sm text-[#D9CBB8]">Klik pada foto untuk menandai sebagai foto favorit yang ingin diedit.</p>
               <button 
                 onClick={confirmSelection}
-                className="bg-[#B49A6C] text-[#242321] px-5 py-2 text-xs uppercase tracking-widest font-medium hover:bg-[#F5F0E8] transition-all"
+                className="bg-[#B49A6C] text-[#242321] px-5 py-2 text-xs uppercase tracking-widest font-medium hover:bg-[#F5F0E8] transition-all rounded"
               >
                 Confirm Selection
               </button>
@@ -159,20 +194,34 @@ export default function ClientGalleryPage() {
                 <p className="text-xs text-[#D9CBB8]/60">Admin sedang melakukan proses editing terbaik untuk momen spesial Anda.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {finalPhotos.map(photo => (
-                  <div key={photo.id} className="relative group rounded overflow-hidden border border-[#B49A6C]/30">
-                    <img src={photo.file_url} alt="Final Edited" className="w-full h-64 object-cover" />
-                    <a 
-                      href={photo.file_url} 
-                      target="_blank" 
-                      download 
-                      className="absolute inset-x-0 bottom-0 bg-[#242321]/90 text-[#F5F0E8] text-center py-2 text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      Download High-Res
-                    </a>
-                  </div>
-                ))}
+              <div>
+                {/* Tombol Download Semua Foto Final Sekaligus di Bagian Atas */}
+                <div className="flex justify-between items-center mb-6 bg-[#F5F0E8]/5 p-4 rounded border border-[#B49A6C]/20">
+                  <p className="text-sm text-[#D9CBB8]">Semua foto terbaik Anda telah siap diunduh.</p>
+                  <button 
+                    onClick={downloadAllFinalPhotos} 
+                    disabled={downloadingAll}
+                    className="bg-[#B49A6C] text-[#242321] px-6 py-2.5 text-xs uppercase tracking-widest font-semibold hover:bg-[#F5F0E8] transition-all rounded shadow"
+                  >
+                    {downloadingAll ? 'Mengunduh...' : '📥 Download Semua Foto'}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {finalPhotos.map(photo => (
+                    <div key={photo.id} className="relative group rounded overflow-hidden border border-[#B49A6C]/30">
+                      <img src={photo.file_url} alt="Final Edited" className="w-full h-64 object-cover" />
+                      <a 
+                        href={photo.file_url} 
+                        target="_blank" 
+                        download 
+                        className="absolute inset-x-0 bottom-0 bg-[#242321]/90 text-[#F5F0E8] text-center py-2 text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        Download HD
+                      </a>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
