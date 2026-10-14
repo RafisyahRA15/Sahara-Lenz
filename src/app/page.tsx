@@ -8,37 +8,60 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="flex-1 flex flex-col items-center justify-center text-center px-6 py-24 relative overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-20 bg-[radial-gradient(#B49A6C_1px,transparent_1px)] [background-size:16px_16px]"></div>
-        
-        <div className="relative z-10 max-w-3xl mx-auto">
-          <span className="text-gold tracking-[0.3em] text-xs uppercase mb-4 block">
+      <section className="relative h-[85vh] flex items-center justify-center text-center px-6 overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1600&auto=format&fit=crop"
+            alt="Sahara Lenz Hero"
+            className="w-full h-full object-cover opacity-40 scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/60 to-transparent"></div>
+        </div>
+
+        <div className="relative z-10 max-w-3xl mx-auto space-y-6">
+          <span className="text-gold tracking-[0.4em] text-xs uppercase block">
             Luxury Editorial Photography
           </span>
-          <h1 className="font-serif text-4xl md:text-6xl tracking-wide uppercase mb-6 leading-tight">
-            Every Frame Holds a Story.
+          <h1 className="font-serif text-5xl md:text-7xl tracking-wide uppercase text-ivory">
+            SAHARA LENZ
           </h1>
-          <p className="text-sand text-base md:text-lg font-light mb-10 max-w-xl mx-auto">
-            Mengabadikan momen berharga Anda melalui sentuhan artistik yang natural, elegan, dan penuh makna.
+          <p className="text-sand text-sm md:text-base font-light tracking-widest max-w-xl mx-auto">
+            Mengabadikan setiap babak berharga dalam hidup Anda dengan sentuhan estetika visual yang abadi dan berkelas.
           </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href="/portfolio"
               className="px-8 py-3 bg-gold text-charcoal text-xs tracking-widest uppercase font-medium hover:bg-ivory transition duration-300"
             >
-              Explore Our Work
+              Explore Portfolio
             </Link>
-            <a
-              href="https://wa.me/6281234567890?text=Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20dengan%20jasa%20fotografi%20SAHARA%20LENZ.%20Boleh%20saya%20bertanya%20mengenai%20paket%20dan%20jadwal%20sesi%20fotografi?"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-3 border border-gold text-gold text-xs tracking-widest uppercase hover:bg-gold/10 transition duration-300"
+            <Link
+              href="/packages"
+              className="px-8 py-3 border border-gold text-gold text-xs tracking-widest uppercase hover:bg-gold hover:text-charcoal transition duration-300"
             >
-              Chat on WhatsApp
-            </a>
+              View Pricelist
+            </Link>
           </div>
         </div>
+      </section>
+
+      {/* About Teaser */}
+      <section className="py-24 px-6 max-w-4xl mx-auto text-center">
+        <span className="text-gold tracking-[0.3em] text-xs uppercase mb-3 block">
+          The Philosophy
+        </span>
+        <h2 className="font-serif text-3xl md:text-4xl uppercase tracking-wider mb-6">
+          Every Frame Holds a Story
+        </h2>
+        <p className="text-sand text-sm md:text-base font-light leading-relaxed mb-8">
+          SAHARA LENZ hadir untuk Anda yang menghargai keindahan dalam kesederhanaan dan kemewahan dalam detail. Kami merangkum ekspresi, emosi, dan cerita otentik menjadi mahakarya visual yang tak lekang oleh waktu.
+        </p>
+        <Link
+          href="/about"
+          className="text-xs text-gold tracking-widest uppercase underline hover:text-ivory"
+        >
+          Discover Our Story &rarr;
+        </Link>
       </section>
 
       <Footer />
