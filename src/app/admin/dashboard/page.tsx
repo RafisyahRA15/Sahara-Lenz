@@ -21,6 +21,9 @@ interface Photo {
 }
 
 export default function AdminDashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [inputPassword, setInputPassword] = useState('')
+
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -35,8 +38,21 @@ export default function AdminDashboard() {
   const [newDate, setNewDate] = useState('')
 
   useEffect(() => {
-    fetchClients()
-  }, [])
+    if (isAuthenticated) {
+      fetchClients()
+    }
+  }, [isAuthenticated])
+
+  // Fungsi Cek Password
+  function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    if (inputPassword === '251208') {
+      setIsAuthenticated(true)
+    } else {
+      alert('Password salah! Silakan coba lagi.')
+      setInputPassword('')
+    }
+  }
 
   async function fetchClients() {
     const { data } = await supabase.from('clients').select('*').order('created_at', { ascending: false })
@@ -96,23 +112,19 @@ export default function AdminDashboard() {
     selectClient(selectedClient)
   }
 
-  // Fungsi saat Status Diubah (Termasuk Arsip/Selesai yang otomatis membersihkan storage)
   async function updateStatus(newStatus: string) {
     if (!selectedClient) return
 
     if (newStatus === 'Completed') {
       const confirmArsip = window.confirm(
-        'Arsipkan klien ini? Perhatian: Data pesanan akan masuk ke History, dan semua foto di galeri web akan dihapus otomatis untuk menghemat penyimpanan Supabase. Pastikan Anda sudah membackup foto ke Google Drive/Harddisk.'
+        'Arsipkan klien ini? Perhatian: Data pesanan akan masuk ke History, dan semua foto di galeri web akan dihapus otomatis untuk menghemat penyimpanan Supabase.'
       )
       if (!confirmArsip) return
 
-      // 1. Hapus file fisik dari Supabase Storage berdasarkan folder client id
-      // Mengambil daftar foto klien saat ini
       const { data: clientPhotos } = await supabase.from('client_photos').select('file_url').eq('client_id', selectedClient.id)
       
       if (clientPhotos && clientPhotos.length > 0) {
         const filePaths = clientPhotos.map(p => {
-          // Ekstrak path file setelah 'client-uploads/'
           const parts = p.file_url.split('/client-uploads/')
           return parts[1] || ''
         }).filter(Boolean)
@@ -122,18 +134,16 @@ export default function AdminDashboard() {
         }
       }
 
-      // 2. Hapus data foto dari tabel database client_photos
       await supabase.from('client_photos').delete().eq('client_id', selectedClient.id)
     }
 
-    // 3. Update status klien di database
     await supabase.from('clients').update({ status: newStatus }).eq('id', selectedClient.id)
     setSelectedClient({ ...selectedClient, status: newStatus })
     fetchClients()
 
     if (newStatus === 'Completed') {
-      alert('Pesanan berhasil diarsipkan ke History dan penyimpanan Supabase telah dibersihkan!')
-      setPhotos([]) // Kosongkan tampilan foto di admin
+      alert('Pesanan berhasil diarsipkan ke History dan penyimpanan dibersihkan!')
+      setPhotos([])
     } else {
       alert(`Status berhasil diubah menjadi: ${newStatus}`)
     }
@@ -173,6 +183,37 @@ export default function AdminDashboard() {
     }
   }
 
+  // Jika Belum Login (Masukkan Password)
+  if (!isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-[#242321] text-[#F5F0E8] flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-[#F5F0E8]/5 p-8 rounded border border-[#B49A6C]/30 text-center space-y-6">
+          <div>
+            <p className="text-[#B49A6C] uppercase tracking-widest text-xs mb-2">SAHARA LENZ SECURE AREA</p>
+            <h1 className="text-2xl font-serif">Admin Authentication</h1>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input 
+              type="password" 
+              placeholder="Masukkan Password Admin" 
+              value={inputPassword} 
+              onChange={e => setInputPassword(e.target.value)} 
+              required 
+              className="w-full bg-[#242321] border border-[#B49A6C]/40 p-3 rounded text-[#F5F0E8] text-center tracking-widest text-sm focus:outline-none focus:border-[#B49A6C]"
+            />
+            <button 
+              type="submit" 
+              className="w-full bg-[#B49A6C] text-[#242321] py-3 uppercase tracking-widest text-xs font-semibold hover:bg-[#F5F0E8] transition-all rounded"
+            >
+              Masuk Dashboard
+            </button>
+          </form>
+          <a href="/" className="inline-block text-xs uppercase tracking-widest text-[#D9CBB8]/60 hover:text-[#B49A6C]">← Kembali ke Website Utama</a>
+        </div>
+      </main>
+    )
+  }
+
   const activeClients = clients.filter(c => c.status !== 'Completed')
   const historyClients = clients.filter(c => c.status === 'Completed')
   const displayedClients = activeTabMenu === 'active' ? activeClients : historyClients
@@ -185,7 +226,15 @@ export default function AdminDashboard() {
             <p className="text-[#B49A6C] uppercase tracking-widest text-xs">SAHARA LENZ ADMIN</p>
             <h1 className="text-3xl font-serif">Dashboard Pengelolaan Klien</h1>
           </div>
-          <a href="/" className="text-xs uppercase tracking-widest text-[#D9CBB8] hover:text-[#B49A6C]">Kembali ke Website</a>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsAuthenticated(false)} 
+              className="text-xs uppercase tracking-widest text-rose-400 hover:text-rose-300"
+            >
+              Keluar (Lock)
+            </button>
+            <a href="/" className="text-xs uppercase tracking-widest text-[#D9CBB8] hover:text-[#B49A6C]">Website Utama</a>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -260,7 +309,7 @@ export default function AdminDashboard() {
                     )}
                     {activeTabMenu === 'history' && (
                       <span className="text-xs bg-emerald-900/50 text-emerald-300 px-3 py-2 rounded border border-emerald-500/30">
-                        ✓ Pesanan Selesai (File foto telah dibersihkan dari storage)
+                        ✓ Pesanan Selesai (File foto telah dibersihkan)
                       </span>
                     )}
                   </div>
@@ -289,7 +338,7 @@ export default function AdminDashboard() {
 
                 <h3 className="text-sm uppercase tracking-widest text-[#B49A6C] mb-2">Galeri Foto Klien</h3>
                 <p className="text-xs text-[#D9CBB8]/60 mb-4">
-                  {activeTabMenu === 'active' ? 'Ketuk foto untuk preview.' : 'Foto pada klien di History telah dihapus otomatis untuk menghemat penyimpanan server.'}
+                  {activeTabMenu === 'active' ? 'Ketuk foto untuk preview.' : 'Foto pada klien di History telah dihapus otomatis untuk menghemat penyimpanan.'}
                 </p>
                 
                 <div className="grid grid-cols-3 gap-4 max-h-[350px] overflow-y-auto pr-2">
