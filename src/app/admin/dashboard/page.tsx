@@ -24,6 +24,7 @@ export default function AdminDashboard() {
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [photos, setPhotos] = useState<Photo[]>([])
+  const [uploading, setUploading] = useState(false)
   
   const [newName, setNewName] = useState('')
   const [newWa, setNewWa] = useState('')
@@ -60,24 +61,35 @@ export default function AdminDashboard() {
     if (data) setPhotos(data)
   }
 
+  // Fungsi untuk upload banyak foto sekaligus (mendukung galeri & file manager)
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, fileType: 'selection' | 'final') {
-    if (!selectedClient || !e.target.files) return
-    const file = e.target.files[0]
-    const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`
+    if (!selectedClient || !e.target.files || e.target.files.length === 0) return
+    
+    setUploading(true)
+    const files = Array.from(e.target.files)
 
-    const { error: uploadError } = await supabase.storage.from('client-uploads').upload(fileName, file)
-    if (uploadError) {
-      alert('Gagal mengunggah file: ' + uploadError.message)
-      return
+    for (const file of files) {
+      const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`
+
+      // Upload ke storage Supabase
+      const { error: uploadError } = await supabase.storage.from('client-uploads').upload(fileName, file)
+      if (uploadError) {
+        console.error('Gagal upload file:', uploadError.message)
+        continue
+      }
+
+      // Ambil public URL
+      const { data: publicURLData } = supabase.storage.from('client-uploads').getPublicUrl(fileName)
+      const file_url = publicURLData.publicUrl
+
+      // Simpan ke database tabel client_photos
+      await supabase.from('client_photos').insert([
+        { client_id: selectedClient.id, file_url, file_type: fileType, is_selected: false }
+      ])
     }
 
-    const { data: publicURLData } = supabase.storage.from('client-uploads').getPublicUrl(fileName)
-    const file_url = publicURLData.publicUrl
-
-    await supabase.from('client_photos').insert([
-      { client_id: selectedClient.id, file_url, file_type: fileType, is_selected: false }
-    ])
-
+    setUploading(false)
+    alert('Semua foto berhasil diunggah!')
     selectClient(selectedClient)
   }
 
@@ -146,24 +158,34 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {uploading && (
+                  <div className="mb-4 p-3 bg-[#B49A6C]/20 text-[#B49A6C] text-center text-xs rounded animate-pulse">
+                    Sedang mengunggah banyak foto ke galeri klien... Mohon tunggu sebentar.
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                  {/* Upload Foto Mentah dengan filter gambar */}
+                  {/* Upload Banyak Foto Mentah */}
                   <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
-                    <p className="text-xs mb-3 text-[#D9CBB8]">Upload Foto Mentah (Selection)</p>
+                    <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Mentah (Bisa Banyak Sekaligus)</p>
+                    <p className="text-[10px] text-[#D9CBB8]/60 mb-3">Mendukung pilihan dari Galeri atau File Manager</p>
                     <input 
                       type="file" 
                       accept="image/*" 
+                      multiple 
                       onChange={e => handleFileUpload(e, 'selection')} 
                       className="text-xs text-[#D9CBB8] file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] hover:file:bg-[#F5F0E8] cursor-pointer" 
                     />
                   </div>
 
-                  {/* Upload Foto Edit Final dengan filter gambar */}
+                  {/* Upload Banyak Foto Edit Final */}
                   <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
-                    <p className="text-xs mb-3 text-[#D9CBB8]">Upload Foto Edit (Final)</p>
+                    <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Edit Final (Bisa Banyak Sekaligus)</p>
+                    <p className="text-[10px] text-[#D9CBB8]/60 mb-3">Mendukung pilihan dari Galeri atau File Manager</p>
                     <input 
                       type="file" 
                       accept="image/*" 
+                      multiple 
                       onChange={e => handleFileUpload(e, 'final')} 
                       className="text-xs text-[#D9CBB8] file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] hover:file:bg-[#F5F0E8] cursor-pointer" 
                     />
