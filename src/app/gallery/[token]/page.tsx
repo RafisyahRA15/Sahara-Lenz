@@ -14,7 +14,6 @@ interface Photo {
 interface ClientData {
   id: string
   name: string
-  whatsapp: string
   package_name: string
   session_date: string
   status: string
@@ -139,7 +138,7 @@ export default function ClientGalleryPage() {
           <p className="text-[#D9CBB8] text-sm">Paket: {client.package_name} | Tanggal: {client.session_date || 'Belum ditentukan'}</p>
         </header>
 
-        {/* Jika Status Completed: Tampilkan Kartu Ucapan Terima Kasih & Kebijakan Penyimpanan */}
+        {/* Jika Status Completed */}
         {isCompleted ? (
           <div className="max-w-2xl mx-auto text-center bg-[#F5F0E8]/5 p-8 rounded border border-[#B49A6C]/30 space-y-6">
             <div className="w-12 h-12 mx-auto bg-[#B49A6C]/20 rounded-full flex items-center justify-center text-[#B49A6C] text-xl font-serif">
@@ -155,7 +154,7 @@ export default function ClientGalleryPage() {
             </div>
             <div className="pt-2">
               <a 
-                href={`https://wa.me/?text=Halo%20Sahara%20Lenz,%20saya%20${client.name}%20ingin%20menghubungi%20kembali%20terkait%20arsip%20foto.`}
+                href="https://wa.me/6281234567890?text=Halo%20Sahara%20Lenz,%20saya%20ingin%20menghubungi%20kembali%20terkait%20arsip%20foto."
                 target="_blank"
                 className="inline-block bg-[#B49A6C] text-[#242321] px-6 py-3 text-xs uppercase tracking-widest font-semibold rounded hover:bg-[#F5F0E8] transition-all"
               >
@@ -181,7 +180,7 @@ export default function ClientGalleryPage() {
               </button>
             </div>
 
-            {/* Tab 1: Photo Selection */}
+            {/* Tab 1: Photo Selection (Dilengkapi Watermark Halus di Tengah) */}
             {activeTab === 'selection' && (
               <div>
                 <div className="flex justify-between items-center mb-6 bg-[#F5F0E8]/5 p-4 rounded border border-[#B49A6C]/20">
@@ -202,6 +201,14 @@ export default function ClientGalleryPage() {
                       className={`relative cursor-pointer group rounded overflow-hidden border-2 transition-all ${photo.is_selected ? 'border-[#B49A6C] scale-[0.98]' : 'border-transparent'}`}
                     >
                       <img src={photo.file_url} alt="Client Selection" className="w-full h-64 object-cover" />
+                      
+                      {/* Watermark Halus di Tengah Foto Seleksi */}
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                        <span className="text-white/30 font-serif tracking-[0.25em] text-xs sm:text-sm uppercase transform -rotate-12 px-2 py-1 bg-black/20 rounded">
+                          SAHARA LENZ
+                        </span>
+                      </div>
+
                       <div className={`absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${photo.is_selected ? 'bg-[#B49A6C] text-[#242321]' : 'bg-black/50 text-white border border-white/50'}`}>
                         {photo.is_selected ? '✓' : ''}
                       </div>
@@ -211,7 +218,7 @@ export default function ClientGalleryPage() {
               </div>
             )}
 
-            {/* Tab 2: Final Edited Photos */}
+            {/* Tab 2: Final Edited Photos (Bersih tanpa watermark agar klien puas mendownload hasil akhir) */}
             {activeTab === 'final' && (
               <div>
                 {!isFinalPublished ? (
@@ -221,7 +228,6 @@ export default function ClientGalleryPage() {
                   </div>
                 ) : (
                   <div>
-                    {/* Kotak Informasi & Tombol Download Semua */}
                     <div className="mb-6 bg-[#F5F0E8]/5 p-5 rounded border border-[#B49A6C]/30 space-y-3">
                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                         <div>
