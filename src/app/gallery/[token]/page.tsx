@@ -1,152 +1,183 @@
 'use client'
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase/client'
+
+interface Photo {
+  id: string
+  file_url: string
+  file_type: 'selection' | 'final'
+  is_selected: boolean
+}
+
+interface ClientData {
+  id: string
+  name: string
+  package_name: string
+  session_date: string
+  status: string
+}
 
 export default function ClientGalleryPage() {
-  const params = useParams();
-  const token = params?.token;
-  const supabase = createClient();
+  const params = useParams()
+  const token = params.token as string
 
-  const [loading, setLoading] = useState(true);
-  const [clientData, setClientData] = useState<any>(null);
-  const [photos, setPhotos] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'selection' | 'final'>('selection');
+  const [client, setClient] = useState<ClientData | null>(null)
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'selection' | 'final'>('selection')
 
   useEffect(() => {
-    if (token) {
-      fetchGalleryData();
-    }
-  }, [token]);
+    fetchClientAndPhotos()
+  }, [token])
 
-  async function fetchGalleryData() {
-    setLoading(true);
-    // Contoh pengambilan data dari Supabase berdasarkan token galeri privat klien
-    try {
-      // Simulasi data jika tabel belum diisi di database
-      setClientData({
-        client_name: "Sarah & Alex",
-        session_date: "2026-10-20",
-        package_name: "The Signature",
-        status: "Waiting for Selection"
-      });
-      
-      setPhotos([
-        { id: 1, url: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=800", type: "selection", selected: false },
-        { id: 2, url: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800", type: "selection", selected: true },
-        { id: 3, url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800", type: "selection", selected: false },
-      ]);
-    } catch (error) {
-      console.error('Error fetching gallery:', error);
-    } finally {
-      setLoading(false);
+  async function fetchClientAndPhotos() {
+    setLoading(true)
+    const { data: clientData } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('token', token)
+      .single()
+
+    if (!clientData) {
+      setLoading(false)
+      return
+    }
+
+    setClient(clientData)
+
+    const { data: photoData } = await supabase
+      .from('client_photos')
+      .select('*')
+      .eq('client_id', clientData.id)
+
+    if (photoData) {
+      setPhotos(photoData)
+    }
+    setLoading(false)
+  }
+
+  async function toggleSelectPhoto(photoId: string, currentStatus: boolean) {
+    const newStatus = !currentStatus
+    const { error } = await supabase
+      .from('client_photos')
+      .update({ is_selected: newStatus })
+      .eq('id', photoId)
+
+    if (!error) {
+      setPhotos(photos.map(p => p.id === photoId ? { ...p, is_selected: newStatus } : p))
     }
   }
 
-  const toggleSelectPhoto = (id: number) => {
-    setPhotos(photos.map(p => p.id === id ? { ...p, selected: !p.selected } : p));
-  };
+  async function confirmSelection() {
+    if (!client) return
+    const { error } = await supabase
+      .from('clients')
+      .update({ status: 'Selection Confirmed' })
+      .eq('id', client.id)
+
+    if (!error) {
+      setClient({ ...client, status: 'Selection Confirmed' })
+      alert('Pilihan foto berhasil dikonfirmasi ke SAHARA LENZ! Terima kasih.')
+    }
+  }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-charcoal text-ivory flex items-center justify-center">
-        <p className="tracking-widest uppercase text-xs text-gold">Loading Private Gallery...</p>
-      </div>
-    );
+    return <div className="min-h-screen bg-[#242321] text-[#F5F0E8] flex items-center justify-center font-serif">Memuat galeri eksklusif Anda...</div>
   }
 
+  if (!client) {
+    return <div className="min-h-screen bg-[#242321] text-[#F5F0E8] flex items-center justify-center font-serif">Galeri tidak ditemukan atau tautan tidak valid.</div>
+  }
+
+  const selectionPhotos = photos.filter(p => p.file_type === 'selection')
+  const finalPhotos = photos.filter(p => p.file_type === 'final')
+  const isFinalPublished = client.status === 'Final Published' || client.status === 'Completed'
+
   return (
-    <main className="min-h-screen flex flex-col bg-charcoal text-ivory">
-      <Navbar />
+    <main className="min-h-screen bg-[#242321] text-[#F5F0E8] px-6 py-12">
+      <div className="max-w-6xl mx-auto">
+        <header className="text-center mb-12">
+          <p className="text-[#B49A6C] uppercase tracking-widest text-sm mb-2">SAHARA LENZ PRIVATE GALLERY</p>
+          <h1 className="text-4xl font-serif font-medium mb-2">{client.name}</h1>
+          <p className="text-[#D9CBB8] text-sm">Paket: {client.package_name} | Tanggal: {client.session_date || 'Belum ditentukan'}</p>
+        </header>
 
-      <section className="py-16 px-6 max-w-6xl mx-auto w-full flex-1">
-        {/* Info Klien */}
-        <div className="text-center mb-12 border-b border-gold/20 pb-8">
-          <span className="text-gold tracking-[0.3em] text-xs uppercase mb-2 block">
-            Private Client Gallery
-          </span>
-          <h1 className="font-serif text-3xl md:text-4xl uppercase tracking-wider mb-2">
-            {clientData?.client_name}
-          </h1>
-          <p className="text-sand text-xs tracking-widest uppercase">
-            Package: {clientData?.package_name} {/* Session: {clientData?.session_date} */}
-          </p>
-        </div>
-
-        {/* Tab Navigasi Galeri */}
-        <div className="flex justify-center gap-4 mb-10">
-          <button
+        {/* Tab Navigasi */}
+        <div className="flex justify-center gap-4 mb-8 border-b border-[#B49A6C]/30 pb-4">
+          <button 
             onClick={() => setActiveTab('selection')}
-            className={`px-6 py-2 text-xs tracking-widest uppercase transition ${
-              activeTab === 'selection' 
-                ? 'bg-gold text-charcoal font-medium' 
-                : 'border border-gold/30 text-sand hover:border-gold'
-            }`}
+            className={`px-6 py-2 text-sm tracking-wider uppercase transition-all ${activeTab === 'selection' ? 'border-b-2 border-[#B49A6C] text-[#F5F0E8]' : 'text-[#D9CBB8]/60 hover:text-[#F5F0E8]'}`}
           >
-            Photo Selection
+            Photo Selection ({selectionPhotos.length})
           </button>
-          <button
+          <button 
             onClick={() => setActiveTab('final')}
-            className={`px-6 py-2 text-xs tracking-widest uppercase transition ${
-              activeTab === 'final' 
-                ? 'bg-gold text-charcoal font-medium' 
-                : 'border border-gold/30 text-sand hover:border-gold'
-            }`}
+            className={`px-6 py-2 text-sm tracking-wider uppercase transition-all ${activeTab === 'final' ? 'border-b-2 border-[#B49A6C] text-[#F5F0E8]' : 'text-[#D9CBB8]/60 hover:text-[#F5F0E8]'}`}
           >
-            Final Edited Photos (Coming Soon)
+            Final Edited Photos ({finalPhotos.length})
           </button>
         </div>
 
-        {/* Konten Tab */}
-        {activeTab === 'selection' ? (
+        {/* Tab 1: Photo Selection */}
+        {activeTab === 'selection' && (
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <p className="text-xs text-sand uppercase tracking-wider">
-                Silakan tandai foto yang ingin Anda pilih untuk proses editing.
-              </p>
+            <div className="flex justify-between items-center mb-6 bg-[#F5F0E8]/5 p-4 rounded border border-[#B49A6C]/20">
+              <p className="text-sm text-[#D9CBB8]">Klik pada foto untuk menandai sebagai foto favorit yang ingin diedit.</p>
               <button 
-                onClick={() => alert("Pilihan foto berhasil dikonfirmasi ke SAHARA LENZ!")}
-                className="px-5 py-2 bg-gold text-charcoal text-xs tracking-widest uppercase hover:bg-ivory transition"
+                onClick={confirmSelection}
+                className="bg-[#B49A6C] text-[#242321] px-5 py-2 text-xs uppercase tracking-widest font-medium hover:bg-[#F5F0E8] transition-all"
               >
                 Confirm Selection
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {photos.map((photo) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {selectionPhotos.map(photo => (
                 <div 
                   key={photo.id} 
-                  onClick={() => toggleSelectPhoto(photo.id)}
-                  className={`relative group cursor-pointer overflow-hidden border-2 transition ${
-                    photo.selected ? 'border-gold' : 'border-gold/20'
-                  }`}
+                  onClick={() => toggleSelectPhoto(photo.id, photo.is_selected)}
+                  className={`relative cursor-pointer group rounded overflow-hidden border-2 transition-all ${photo.is_selected ? 'border-[#B49A6C] scale-[0.98]' : 'border-transparent'}`}
                 >
-                  <div className="aspect-[4/5] overflow-hidden">
-                    <img src={photo.url} alt="Gallery item" className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                  </div>
-                  <div className="absolute top-3 right-3">
-                    <span className={`px-3 py-1 text-[10px] tracking-widest uppercase font-semibold ${photo.selected ? 'bg-gold text-charcoal' : 'bg-charcoal/70 text-ivory border border-gold/40'}`}>
-                      {photo.selected ? 'Selected ✓' : 'Select'}
-                    </span>
+                  <img src={photo.file_url} alt="Client Selection" className="w-full h-64 object-cover" />
+                  <div className={`absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${photo.is_selected ? 'bg-[#B49A6C] text-[#242321]' : 'bg-black/50 text-white border border-white/50'}`}>
+                    {photo.is_selected ? '✓' : ''}
                   </div>
                 </div>
               ))}
             </div>
           </div>
-        ) : (
-          <div className="py-20 text-center border border-gold/10 bg-charcoal/50">
-            <h3 className="font-serif text-xl text-ivory uppercase mb-2">Final Edited Photos Not Available Yet</h3>
-            <p className="text-xs text-sand font-light">
-              Foto hasil editing final akan segera diunggah dan dipublikasikan oleh admin setelah proses seleksi selesai.
-            </p>
+        )}
+
+        {/* Tab 2: Final Edited Photos */}
+        {activeTab === 'final' && (
+          <div>
+            {!isFinalPublished ? (
+              <div className="text-center py-20 bg-[#F5F0E8]/5 rounded border border-[#B49A6C]/20">
+                <p className="text-xl font-serif text-[#D9CBB8] mb-2">Your edited photos are not available yet.</p>
+                <p className="text-xs text-[#D9CBB8]/60">Admin sedang melakukan proses editing terbaik untuk momen spesial Anda.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {finalPhotos.map(photo => (
+                  <div key={photo.id} className="relative group rounded overflow-hidden border border-[#B49A6C]/30">
+                    <img src={photo.file_url} alt="Final Edited" className="w-full h-64 object-cover" />
+                    <a 
+                      href={photo.file_url} 
+                      target="_blank" 
+                      download 
+                      className="absolute inset-x-0 bottom-0 bg-[#242321]/90 text-[#F5F0E8] text-center py-2 text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all"
+                    >
+                      Download High-Res
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
-      </section>
-
-      <Footer />
+      </div>
     </main>
-  );
+  )
 }
