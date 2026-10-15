@@ -27,7 +27,11 @@ export default function AdminDashboard() {
   const [clients, setClients] = useState<Client[]>([])
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [photos, setPhotos] = useState<Photo[]>([])
+  
+  // State untuk Progress Bar & Persentase Upload
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, percent: 0 })
+
   const [downloadingAll, setDownloadingAll] = useState(false)
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
   const [activeTabMenu, setActiveTabMenu] = useState<'active' | 'history'>('active')
@@ -79,7 +83,6 @@ export default function AdminDashboard() {
 
   async function selectClient(client: Client) {
     setSelectedClient(client)
-    // Reset hitungan klik rahasia setiap kali berganti klien
     setNameClickCount(0)
     setIsSecretDeleteUnlocked(false)
 
@@ -87,13 +90,20 @@ export default function AdminDashboard() {
     if (data) setPhotos(data)
   }
 
+  // Fungsi Upload dengan Kalkulasi Persentase Akurat
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, fileType: 'selection' | 'final') {
     if (!selectedClient || !e.target.files || e.target.files.length === 0) return
     
-    setUploading(true)
     const files = Array.from(e.target.files)
+    const totalFiles = files.length
 
-    for (const file of files) {
+    setUploading(true)
+    setUploadProgress({ current: 0, total: totalFiles, percent: 0 })
+
+    let successCount = 0
+
+    for (let i = 0; i < totalFiles; i++) {
+      const file = files[i]
       const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`
 
       const { error: uploadError } = await supabase.storage.from('client-uploads').upload(fileName, file, {
@@ -101,21 +111,26 @@ export default function AdminDashboard() {
         upsert: false
       })
       
-      if (uploadError) {
+      if (!uploadError) {
+        const { data: publicURLData } = supabase.storage.from('client-uploads').getPublicUrl(fileName)
+        const file_url = publicURLData.publicUrl
+
+        await supabase.from('client_photos').insert([
+          { client_id: selectedClient.id, file_url, file_type: fileType, is_selected: false }
+        ])
+        successCount++
+      } else {
         console.error('Gagal upload file:', uploadError.message)
-        continue
       }
 
-      const { data: publicURLData } = supabase.storage.from('client-uploads').getPublicUrl(fileName)
-      const file_url = publicURLData.publicUrl
-
-      await supabase.from('client_photos').insert([
-        { client_id: selectedClient.id, file_url, file_type: fileType, is_selected: false }
-      ])
+      // Hitung persentase real-time
+      const currentProgress = i + 1
+      const calculatedPercent = Math.round((currentProgress / totalFiles) * 100)
+      setUploadProgress({ current: currentProgress, total: totalFiles, percent: calculatedPercent })
     }
 
     setUploading(false)
-    alert('Semua foto resolusi asli berhasil diunggah!')
+    alert(`Selesai! ${successCount} dari ${totalFiles} foto berhasil diunggah.`)
     selectClient(selectedClient)
   }
 
@@ -156,7 +171,6 @@ export default function AdminDashboard() {
     }
   }
 
-  // Fungsi untuk Menghapus Permanen Klien dari Database
   async function deleteClientPermanently() {
     if (!selectedClient) return
 
@@ -343,7 +357,7 @@ export default function AdminDashboard() {
                     <p className="text-xs text-[#D9CBB8]/70 mt-1">Status: <span className="text-[#B49A6C] font-semibold">{selectedClient.status}</span></p>
                     <p className="text-xs text-[#D9CBB8]/70 mt-1">Tautan Galeri: <a href={`/gallery/${selectedClient.token}`} target="_blank" className="text-[#B49A6C] underline">/gallery/{selectedClient.token}</a></p>
                     
-                    {/* TOMBOL HAPUS MUNCUL DI SINI JIKA NAMA SUDAH DIKLIK 3 KALI */}
+                    {/* TOMBOL HAPUS RAHASIA */}
                     {isSecretDeleteUnlocked && (
                       <div className="mt-3">
                         <button 
@@ -376,20 +390,33 @@ export default function AdminDashboard() {
 
                 {activeTabMenu === 'active' && (
                   <>
+                    {/* PROGRESS BAR & PERSENTASE UPLOAD */}
                     {uploading && (
-                      <div className="mb-4 p-3 bg-[#B49A6C]/20 text-[#B49A6C] text-center text-xs rounded animate-pulse">
-                        Mengunggah foto ke galeri klien...
+                      <div className="mb-6 p-4 bg-[#B49A6C]/10 border border-[#B49A6C]/40 rounded space-y-2">
+                        <div className="flex justify-between text-xs text-[#B49A6C] font-medium uppercase tracking-wider">
+                          <span>Mengunggah Foto Mentah...</span>
+                          <span>{uploadProgress.percent}% ({uploadProgress.current} dari {uploadProgress.total} foto)</span>
+                        </div>
+                        <div className="w-full bg-black/40 h-2.5 rounded-full overflow-hidden border border-[#B49A6C]/20">
+                          <div 
+                            className="bg-[#B49A6C] h-full transition-all duration-300 ease-out" 
+                            style={{ width: `${uploadProgress.percent}%` }}
+                          ></div>
+                        </div>
+                        <p className="text-[11px] text-[#D9CBB8]/60 italic">
+                          Mohon jangan menutup halaman ini sampai proses unggah selesai.
+                        </p>
                       </div>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                       <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
                         <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Mentah (Selection)</p>
-                        <input type="file" accept="image/*" multiple onChange={e => handleFileUpload(e, 'selection')} className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" />
+                        <input type="file" accept="image/*" multiple onChange={e => handleFileUpload(e, 'selection')} disabled={uploading} className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" />
                       </div>
                       <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
                         <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Edit Final</p>
-                        <input type="file" accept="image/*" multiple onChange={e => handleFileUpload(e, 'final')} className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" />
+                        <input type="file" accept="image/*" multiple onChange={e => handleFileUpload(e, 'final')} disabled={uploading} className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" />
                       </div>
                     </div>
                   </>
