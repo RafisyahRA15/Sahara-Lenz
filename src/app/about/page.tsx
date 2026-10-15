@@ -1,9 +1,10 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BottomNav from "@/components/BottomNav";
 
 export default function AboutPage() {
   return (
-    <main className="min-h-screen flex flex-col bg-charcoal text-ivory">
+    <main className="min-h-screen flex flex-col bg-charcoal text-ivory pb-16 md:pb-0">
       <Navbar />
 
       <section className="py-20 px-6 max-w-4xl mx-auto w-full flex-1">
@@ -45,6 +46,7 @@ export default function AboutPage() {
       </section>
 
       <Footer />
+      <BottomNav />
     </main>
   );
 }
