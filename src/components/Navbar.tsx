@@ -7,7 +7,7 @@ export default function Navbar() {
         <img 
           src="/logo.png" 
           alt="SAHARA LENZ Logo" 
-          className="h-28 md:h-36 w-auto object-contain" 
+          className="h-10 md:h-12 w-auto object-contain" 
         />
         <span className="font-serif text-2xl tracking-widest text-ivory uppercase group-hover:text-gold transition">
           SAHARA LENZ
