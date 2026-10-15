@@ -1,10 +1,11 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BottomNav from "@/components/BottomNav";
 import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col bg-charcoal text-ivory">
+    <main className="min-h-screen flex flex-col bg-charcoal text-ivory pb-16 md:pb-0">
       <Navbar />
 
       {/* Hero Section */}
@@ -75,6 +76,9 @@ export default function Home() {
       </section>
 
       <Footer />
+
+      {/* Bilah Navigasi Bawah Mengambang (Sticky Bottom Nav) khusus HP */}
+      <BottomNav />
     </main>
   );
 }
