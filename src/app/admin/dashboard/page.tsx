@@ -32,6 +32,10 @@ export default function AdminDashboard() {
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
   const [activeTabMenu, setActiveTabMenu] = useState<'active' | 'history'>('active')
   
+  // State untuk "Tempat Rahasia" (Secret Layer) tombol hapus
+  const [secretUnlockCount, setSecretUnlockCount] = useState(0)
+  const [isSecretZoneOpen, setIsSecretZoneOpen] = useState(false)
+
   const [newName, setNewName] = useState('')
   const [newWa, setNewWa] = useState('')
   const [newPackage, setNewPackage] = useState('The Signature')
@@ -43,7 +47,6 @@ export default function AdminDashboard() {
     }
   }, [isAuthenticated])
 
-  // Fungsi Cek Password
   function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     if (inputPassword === '251208') {
@@ -76,6 +79,10 @@ export default function AdminDashboard() {
 
   async function selectClient(client: Client) {
     setSelectedClient(client)
+    // Reset secret zone setiap ganti klien
+    setSecretUnlockCount(0)
+    setIsSecretZoneOpen(false)
+
     const { data } = await supabase.from('client_photos').select('*').eq('client_id', client.id)
     if (data) setPhotos(data)
   }
@@ -149,6 +156,29 @@ export default function AdminDashboard() {
     }
   }
 
+  // Fungsi untuk Menghapus Permanen Klien dari Database (Dari Tempat Rahasia)
+  async function deleteClientPermanently() {
+    if (!selectedClient) return
+
+    const confirmDelete = window.confirm(
+      `PERINGATAN KERAS: Apakah Anda yakin ingin menghapus data riwayat klien "${selectedClient.name}" secara permanen dari database? Tindakan ini tidak dapat dibatalkan.`
+    )
+    if (!confirmDelete) return
+
+    // Hapus data klien dari tabel clients
+    const { error } = await supabase.from('clients').delete().eq('id', selectedClient.id)
+
+    if (error) {
+      alert('Gagal menghapus data klien: ' + error.message)
+    } else {
+      alert('Data klien berhasil dihapus permanen dari sistem.')
+      setSelectedClient(null)
+      setIsSecretZoneOpen(false)
+      setSecretUnlockCount(0)
+      fetchClients()
+    }
+  }
+
   async function downloadAllSelectedPhotos() {
     const selectedPhotos = photos.filter(p => p.is_selected)
     if (selectedPhotos.length === 0) {
@@ -183,7 +213,6 @@ export default function AdminDashboard() {
     }
   }
 
-  // Jika Belum Login (Masukkan Password)
   if (!isAuthenticated) {
     return (
       <main className="min-h-screen bg-[#242321] text-[#F5F0E8] flex items-center justify-center p-6">
@@ -238,7 +267,7 @@ export default function AdminDashboard() {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Sisi Kiri: Form Tambah Klien & Menu Daftar Klien */}
+          {/* Sisi Kiri: Form & Daftar Klien */}
           <div className="space-y-6">
             <div className="bg-[#F5F0E8]/5 p-6 rounded border border-[#B49A6C]/20">
               <h2 className="text-lg font-serif mb-4 text-[#B49A6C]">Tambah Klien Baru</h2>
@@ -246,9 +275,10 @@ export default function AdminDashboard() {
                 <input type="text" placeholder="Nama Klien" value={newName} onChange={e => setNewName(e.target.value)} required className="w-full bg-[#242321] border border-[#B49A6C]/40 p-2 rounded text-[#F5F0E8]" />
                 <input type="text" placeholder="Nomor WhatsApp (628...)" value={newWa} onChange={e => setNewWa(e.target.value)} required className="w-full bg-[#242321] border border-[#B49A6C]/40 p-2 rounded text-[#F5F0E8]" />
                 <select value={newPackage} onChange={e => setNewPackage(e.target.value)} className="w-full bg-[#242321] border border-[#B49A6C]/40 p-2 rounded text-[#F5F0E8]">
-                  <option value="The Essential">The Essential</option>
-                  <option value="The Signature">The Signature</option>
-                  <option value="The Heirloom">The Heirloom</option>
+                  <option value="Classic">Classic</option>
+                  <option value="Premium">Premium</option>
+                  <option value="Elite">Elite</option>
+                  <option value="Exclusive">Exclusive</option>
                 </select>
                 <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required className="w-full bg-[#242321] border border-[#B49A6C]/40 p-2 rounded text-[#F5F0E8]" />
                 <button type="submit" className="w-full bg-[#B49A6C] text-[#242321] py-2 uppercase tracking-widest text-xs font-medium hover:bg-[#F5F0E8] transition-all">Buat Klien & Galeri</button>
@@ -308,9 +338,38 @@ export default function AdminDashboard() {
                       </>
                     )}
                     {activeTabMenu === 'history' && (
-                      <span className="text-xs bg-emerald-900/50 text-emerald-300 px-3 py-2 rounded border border-emerald-500/30">
-                        ✓ Pesanan Selesai (File foto telah dibersihkan)
-                      </span>
+                      <div className="text-right">
+                        <span className="text-xs bg-emerald-900/50 text-emerald-300 px-3 py-2 rounded border border-emerald-500/30 inline-block mb-2">
+                          ✓ Pesanan Selesai
+                        </span>
+                        
+                        {/* TEMPAT RAHASIA (SECRET ZONE) UNTUK MENGHAPUS KLIEN */}
+                        <div>
+                          {!isSecretZoneOpen ? (
+                            <p 
+                              onClick={() => {
+                                const nextCount = secretUnlockCount + 1
+                                setSecretUnlockCount(nextCount)
+                                if (nextCount >= 3) {
+                                  setIsSecretZoneOpen(true)
+                                  alert('🔓 Zona rahasia terbuka: Menu hapus data permanen diaktifkan.')
+                                }
+                              }}
+                              className="text-[10px] text-stone-500 hover:text-stone-400 cursor-pointer select-none tracking-widest uppercase"
+                              title="Klik beberapa kali untuk membuka..."
+                            >
+                              ⚙️ System Log [{3 - secretUnlockCount}]
+                            </p>
+                          ) : (
+                            <button 
+                              onClick={deleteClientPermanently}
+                              className="bg-rose-950 text-rose-300 border border-rose-800 px-3 py-1.5 text-[11px] uppercase tracking-wider font-semibold rounded hover:bg-rose-900 transition-all animate-pulse"
+                            >
+                              ⚠️ Hapus Permanen Klien Ini
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -371,7 +430,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Modal Lightbox Preview Foto */}
+      {/* Modal Lightbox Preview */}
       {previewPhoto && (
         <div className="fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-50 p-4">
           <div className="relative max-w-4xl max-h-[80vh] mb-4 flex items-center justify-center">
