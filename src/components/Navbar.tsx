@@ -22,7 +22,7 @@ export default function Navbar() {
       </nav>
       <div>
         <a
-          href="https://wa.me/6281234567890?text=Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20dengan%20jasa%20fotografi."
+          href="https://wa.me/6285111879116?text=Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20dengan%20jasa%20fotografi."
           target="_blank"
           rel="noopener noreferrer"
           className="px-4 py-2 md:px-5 md:py-2.5 text-xs tracking-widest uppercase border border-gold text-gold hover:bg-gold hover:text-charcoal transition duration-300"
