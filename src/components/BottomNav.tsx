@@ -16,7 +16,7 @@ export default function BottomNav() {
         <span className="text-[10px] font-medium uppercase tracking-wider font-serif">Prices</span>
       </Link>
       <a 
-        href="https://wa.me/6281234567890?text=Halo%20SAHARA%20LENZ!" 
+        href="https://wa.me/6285111879116?text=Halo%20SAHARA%20LENZ!" 
         target="_blank" 
         rel="noopener noreferrer"
         className="flex-1 py-1 text-gold transition active:scale-95 flex flex-col items-center border-l border-gold/15 font-semibold"
