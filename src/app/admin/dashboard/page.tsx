@@ -32,9 +32,9 @@ export default function AdminDashboard() {
   const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
   const [activeTabMenu, setActiveTabMenu] = useState<'active' | 'history'>('active')
   
-  // State untuk "Tempat Rahasia" (Secret Layer) tombol hapus
-  const [secretUnlockCount, setSecretUnlockCount] = useState(0)
-  const [isSecretZoneOpen, setIsSecretZoneOpen] = useState(false)
+  // State untuk "Tempat Rahasia" (Secret Layer) di nama klien
+  const [nameClickCount, setNameClickCount] = useState(0)
+  const [isSecretDeleteUnlocked, setIsSecretDeleteUnlocked] = useState(false)
 
   const [newName, setNewName] = useState('')
   const [newWa, setNewWa] = useState('')
@@ -79,9 +79,9 @@ export default function AdminDashboard() {
 
   async function selectClient(client: Client) {
     setSelectedClient(client)
-    // Reset secret zone setiap ganti klien
-    setSecretUnlockCount(0)
-    setIsSecretZoneOpen(false)
+    // Reset hitungan klik rahasia setiap kali berganti klien
+    setNameClickCount(0)
+    setIsSecretDeleteUnlocked(false)
 
     const { data } = await supabase.from('client_photos').select('*').eq('client_id', client.id)
     if (data) setPhotos(data)
@@ -156,7 +156,7 @@ export default function AdminDashboard() {
     }
   }
 
-  // Fungsi untuk Menghapus Permanen Klien dari Database (Dari Tempat Rahasia)
+  // Fungsi untuk Menghapus Permanen Klien dari Database
   async function deleteClientPermanently() {
     if (!selectedClient) return
 
@@ -165,7 +165,6 @@ export default function AdminDashboard() {
     )
     if (!confirmDelete) return
 
-    // Hapus data klien dari tabel clients
     const { error } = await supabase.from('clients').delete().eq('id', selectedClient.id)
 
     if (error) {
@@ -173,8 +172,8 @@ export default function AdminDashboard() {
     } else {
       alert('Data klien berhasil dihapus permanen dari sistem.')
       setSelectedClient(null)
-      setIsSecretZoneOpen(false)
-      setSecretUnlockCount(0)
+      setIsSecretDeleteUnlocked(false)
+      setNameClickCount(0)
       fetchClients()
     }
   }
@@ -322,11 +321,41 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                   <div>
-                    <h2 className="text-2xl font-serif text-[#B49A6C]">{selectedClient.name}</h2>
+                    {/* NAMA KLIEN DENGAN FITUR RAHASIA (KLIK 3 KALI) */}
+                    <h2 
+                      onClick={() => {
+                        if (activeTabMenu === 'history') {
+                          const next = nameClickCount + 1
+                          setNameClickCount(next)
+                          if (next >= 3) {
+                            setIsSecretDeleteUnlocked(true)
+                            alert('🔓 Akses hapus rahasia terbuka untuk klien ini.')
+                          }
+                        }
+                      }}
+                      className={`text-2xl font-serif text-[#B49A6C] select-none ${activeTabMenu === 'history' ? 'cursor-pointer' : ''}`}
+                      title={activeTabMenu === 'history' ? 'Ketuk 3 kali...' : ''}
+                    >
+                      {selectedClient.name}
+                    </h2>
+
                     <p className="text-xs text-[#D9CBB8]/70">Paket: <span className="text-[#F5F0E8]">{selectedClient.package_name}</span> | Tanggal: <span className="text-[#F5F0E8]">{selectedClient.session_date}</span></p>
                     <p className="text-xs text-[#D9CBB8]/70 mt-1">Status: <span className="text-[#B49A6C] font-semibold">{selectedClient.status}</span></p>
                     <p className="text-xs text-[#D9CBB8]/70 mt-1">Tautan Galeri: <a href={`/gallery/${selectedClient.token}`} target="_blank" className="text-[#B49A6C] underline">/gallery/{selectedClient.token}</a></p>
+                    
+                    {/* TOMBOL HAPUS MUNCUL DI SINI JIKA NAMA SUDAH DIKLIK 3 KALI */}
+                    {isSecretDeleteUnlocked && (
+                      <div className="mt-3">
+                        <button 
+                          onClick={deleteClientPermanently}
+                          className="bg-rose-950 text-rose-300 border border-rose-800 px-3 py-1.5 text-[11px] uppercase tracking-wider font-semibold rounded hover:bg-rose-900 transition-all animate-pulse"
+                        >
+                          ⚠️ Hapus Permanen Klien Ini dari Database
+                        </button>
+                      </div>
+                    )}
                   </div>
+
                   <div className="flex flex-wrap gap-2">
                     {activeTabMenu === 'active' && (
                       <>
@@ -338,38 +367,9 @@ export default function AdminDashboard() {
                       </>
                     )}
                     {activeTabMenu === 'history' && (
-                      <div className="text-right">
-                        <span className="text-xs bg-emerald-900/50 text-emerald-300 px-3 py-2 rounded border border-emerald-500/30 inline-block mb-2">
-                          ✓ Pesanan Selesai
-                        </span>
-                        
-                        {/* TEMPAT RAHASIA (SECRET ZONE) UNTUK MENGHAPUS KLIEN */}
-                        <div>
-                          {!isSecretZoneOpen ? (
-                            <p 
-                              onClick={() => {
-                                const nextCount = secretUnlockCount + 1
-                                setSecretUnlockCount(nextCount)
-                                if (nextCount >= 3) {
-                                  setIsSecretZoneOpen(true)
-                                  alert('🔓 Zona rahasia terbuka: Menu hapus data permanen diaktifkan.')
-                                }
-                              }}
-                              className="text-[10px] text-stone-500 hover:text-stone-400 cursor-pointer select-none tracking-widest uppercase"
-                              title="Klik beberapa kali untuk membuka..."
-                            >
-                              ⚙️ System Log [{3 - secretUnlockCount}]
-                            </p>
-                          ) : (
-                            <button 
-                              onClick={deleteClientPermanently}
-                              className="bg-rose-950 text-rose-300 border border-rose-800 px-3 py-1.5 text-[11px] uppercase tracking-wider font-semibold rounded hover:bg-rose-900 transition-all animate-pulse"
-                            >
-                              ⚠️ Hapus Permanen Klien Ini
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                      <span className="text-xs bg-emerald-900/50 text-emerald-300 px-3 py-2 rounded border border-emerald-500/30">
+                        ✓ Pesanan Selesai (File foto telah dibersihkan)
+                      </span>
                     )}
                   </div>
                 </div>
