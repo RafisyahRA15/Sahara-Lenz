@@ -15,7 +15,7 @@ export default function PackagesPage() {
         "Kapasitas: Maksimal 5 Orang",
         "1 Orang Wisudawan",
         "Maksimal 15 Foto Hasil Edit",
-        "Format file digital HD JPG"
+        "Format file digital HD JPG",
       ],
       whatsappText: "Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20memesan%20paket%20Classic%20(Rp200.000).%20Mohon%20informasi%20mengenai%20jadwal%20yang%20tersedia.%20Terima%20kasih."
     },
@@ -29,7 +29,7 @@ export default function PackagesPage() {
         "Kapasitas: Maksimal 7 Orang / Family",
         "1 Orang Wisudawan",
         "Maksimal 25 Foto Hasil Edit",
-        "Format file digital HD JPG"
+        "Format file digital HD JPG",
       ],
       whatsappText: "Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20memesan%20paket%20Premium%20(Rp300.000).%20Mohon%20informasi%20mengenai%20jadwal%20yang%20tersedia.%20Terima%20kasih."
     },
@@ -38,7 +38,7 @@ export default function PackagesPage() {
       price: "Rp400.000",
       desc: "Sesi dokumentasi lengkap untuk merayakan kelulusan bersama keluarga besar tanpa batasan jumlah orang.",
       features: [
-        "Durasi 1 Jam"
+        "Durasi 1 Jam",
         "Full Family (Bebas sebanyak apapun orang)",
         "1 Orang Wisudawan",
         "Maksimal 35 Foto Hasil Edit",
@@ -51,7 +51,7 @@ export default function PackagesPage() {
       price: "Rp500.000",
       desc: "Paket spesial untuk wisuda bareng sahabat/grup dengan banyak wisudawan sekaligus dalam satu sesi.",
       features: [
-        "Durasi 1 Jam"
+        "Durasi 1 Jam",
         "Hingga 3 Orang Wisudawan sekaligus",
         "Keluarga dari masing-masing wisudawan ikut serta",
         "Maksimal 40 Foto Hasil Edit",
