@@ -28,7 +28,7 @@ export default function Home() {
             <img 
               src="/logo.png" 
               alt="SAHARA LENZ Logo" 
-              className="h-16 md:h-24 w-auto object-contain" 
+              className="h-48 md:h-72 w-auto object-contain" 
             />
             <h1 className="font-serif text-5xl md:text-7xl tracking-wide uppercase text-ivory">
               SAHARA LENZ
