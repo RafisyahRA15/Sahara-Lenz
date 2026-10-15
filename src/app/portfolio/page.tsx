@@ -1,26 +1,64 @@
-'lib'
+'use client'
+
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BottomNav from "@/components/BottomNav";
 import { useState } from "react";
 
 export default function PortfolioPage() {
-  // Daftar kategori portofolio sesuai permintaan
-  const categories = ["All", "Graduation", "Yudisium", "Portrait", "Couple", "Friends", "Family", "Group", "Wedding"];
+  // Daftar kategori portofolio (Yudisium digabungkan/ditiadakan sesuai karya yang tersedia)
+  const categories = ["All", "Graduation", "Portrait", "Couple", "Friends", "Family", "Group"];
 
-  // Data contoh foto portofolio
+  // State untuk filter kategori aktif
+  const [activeCategory, setActiveCategory] = useState("All");
+
+  // Data portofolio dengan foto wisuda asli dan placeholder profesional lainnya
   const portfolioItems = [
-    { title: "Graduation Moments", category: "Graduation", img: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=800&auto=format&fit=crop" },
-    { title: "Yudisium Ceremony", category: "Yudisium", img: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=800&auto=format&fit=crop" },
-    { title: "Editorial Portrait", category: "Portrait", img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop" },
-    { title: "Couple Session", category: "Couple", img: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=800&auto=format&fit=crop" },
-    { title: "Best Friends", category: "Friends", img: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?q=80&w=800&auto=format&fit=crop" },
-    { title: "Family Warmth", category: "Family", img: "https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800&auto=format&fit=crop" },
-    { title: "Group Photography", category: "Group", img: "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?q=80&w=800&auto=format&fit=crop" },
-    { title: "Wedding Story", category: "Wedding", img: "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800&auto=format&fit=crop" },
+    { 
+      title: "Academic Milestone - Pink Kebaya", 
+      category: "Graduation", 
+      img: "/grad-1.jpg", 
+      desc: "Momen wisuda penuh suka cita dengan balutan kebaya bernuansa merah muda dan toga yang elegan."
+    },
+    { 
+      title: "The Graduate Honor", 
+      category: "Graduation", 
+      img: "/grad-2.jpg", 
+      desc: "Potret khidmat wisudawati mengenakan toga lengkap dengan kalung medali universitas."
+    },
+    { 
+      title: "Campus Elegance", 
+      category: "Graduation", 
+      img: "/grad-3.jpg", 
+      desc: "Sesi potret kelulusan bernuansa klasik modern di area kampus dengan detail arsitektur yang estetik."
+    },
+    { 
+      title: "Editorial Portrait", 
+      category: "Portrait", 
+      img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop",
+      desc: "Sentuhan pencahayaan dramatis untuk menonjolkan karakter dan ekspresi personal."
+    },
+    { 
+      title: "Couple Session", 
+      category: "Couple", 
+      img: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=800&auto=format&fit=crop",
+      desc: "Mengabadikan keintiman dan ikatan emosional yang tulus dalam setiap jepretan."
+    },
+    { 
+      title: "Family Warmth", 
+      category: "Family", 
+      img: "https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800&auto=format&fit=crop",
+      desc: "Kehangatan dan kebersamaan keluarga yang diabadikan secara natural dan abadi."
+    },
   ];
 
+  // Filter item berdasarkan kategori yang dipilih
+  const filteredItems = activeCategory === "All" 
+    ? portfolioItems 
+    : portfolioItems.filter(item => item.category === activeCategory);
+
   return (
-    <main className="min-h-screen flex flex-col bg-charcoal text-ivory">
+    <main className="min-h-screen flex flex-col bg-charcoal text-ivory pb-16 md:pb-0">
       <Navbar />
 
       <section className="py-20 px-6 max-w-7xl mx-auto w-full flex-1">
@@ -32,45 +70,50 @@ export default function PortfolioPage() {
             Portfolio
           </h1>
           <p className="text-sand text-sm max-w-xl mx-auto font-light">
-            Kumpulan karya dokumentasi pilihan yang merangkum setiap kisah, ekspresi, dan momen berharga.
+            Kumpulan karya dokumentasi pilihan yang merangkum setiap kisah, ekspresi, dan momen berharga pencapaian Anda.
           </p>
         </div>
 
-        {/* Kategori Filter / Info */}
+        {/* Kategori Filter */}
         <div className="flex flex-wrap justify-center gap-3 mb-12">
           {categories.map((cat, idx) => (
-            <span
+            <button
               key={idx}
-              className={`px-4 py-2 text-xs tracking-widest uppercase border ${
-                cat === "Wedding" 
-                  ? 'border-gold/30 text-sand/50 bg-charcoal cursor-not-allowed' 
-                  : 'border-gold/40 text-sand hover:border-gold hover:text-gold transition'
+              onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-2 text-xs tracking-widest uppercase border transition ${
+                activeCategory === cat 
+                  ? 'border-gold bg-gold text-charcoal font-medium' 
+                  : 'border-gold/40 text-sand hover:border-gold hover:text-gold'
               }`}
             >
-              {cat} {cat === "Wedding" && "— Coming Soon"}
-            </span>
+              {cat}
+            </button>
           ))}
         </div>
 
         {/* Grid Portofolio */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {portfolioItems.map((item, idx) => (
-            <div key={idx} className="group relative overflow-hidden border border-gold/20 bg-charcoal/40">
-              <div className="aspect-[4/5] overflow-hidden">
-                <img
-                  src={item.img}
-                  alt={item.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-700 ease-out opacity-85 group-hover:opacity-100"
-                />
+          {filteredItems.map((item, idx) => (
+            <div key={idx} className="group relative overflow-hidden border border-gold/20 bg-charcoal/40 flex flex-col justify-between">
+              <div>
+                <div className="aspect-[4/5] overflow-hidden">
+                  <img
+                    src={item.img}
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-700 ease-out opacity-90 group-hover:opacity-100"
+                  />
+                </div>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-transparent to-transparent opacity-80"></div>
-              <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col items-start">
-                <span className="text-[10px] tracking-[0.2em] uppercase text-gold mb-1">
+              <div className="p-6 bg-charcoal/90 border-t border-gold/10">
+                <span className="text-[10px] tracking-[0.2em] uppercase text-gold mb-1 block">
                   {item.category}
                 </span>
-                <h3 className="font-serif text-xl text-ivory tracking-wider uppercase">
+                <h3 className="font-serif text-xl text-ivory tracking-wider uppercase mb-2">
                   {item.title}
                 </h3>
+                <p className="text-sand text-xs font-light leading-relaxed">
+                  {item.desc}
+                </p>
               </div>
             </div>
           ))}
@@ -78,6 +121,7 @@ export default function PortfolioPage() {
       </section>
 
       <Footer />
+      <BottomNav />
     </main>
   );
 }
