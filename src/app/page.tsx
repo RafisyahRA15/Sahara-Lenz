@@ -23,14 +23,14 @@ export default function Home() {
             Luxury Editorial Photography
           </span>
 
-          {/* Logo di sebelah tulisan SAHARA LENZ */}
-          <div className="flex items-center justify-center gap-4">
+          {/* Logo & Teks Ditumpuk Vertikal */}
+          <div className="flex flex-col items-center justify-center space-y-4">
             <img 
               src="/logo.png" 
               alt="SAHARA LENZ Logo" 
-              className="h-48 md:h-72 w-auto object-contain" 
+              className="h-40 md:h-72 w-auto object-contain" 
             />
-            <h1 className="font-serif text-5xl md:text-7xl tracking-wide uppercase text-ivory">
+            <h1 className="font-serif text-4xl md:text-6xl tracking-widest uppercase text-ivory">
               SAHARA LENZ
             </h1>
           </div>
