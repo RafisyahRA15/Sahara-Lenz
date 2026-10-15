@@ -19,21 +19,22 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 max-w-3xl mx-auto space-y-6">
-          {/* Logo Brand SAHARA LENZ */}
-          <div className="flex items-center justify-center">
+          <span className="text-gold tracking-[0.4em] text-xs uppercase block">
+            Luxury Editorial Photography
+          </span>
+
+          {/* Logo di sebelah tulisan SAHARA LENZ */}
+          <div className="flex items-center justify-center gap-4">
             <img 
               src="/logo.png" 
               alt="SAHARA LENZ Logo" 
-              className="h-16 md:h-20 w-auto object-contain" 
+              className="h-12 md:h-16 w-auto object-contain" 
             />
+            <h1 className="font-serif text-5xl md:text-7xl tracking-wide uppercase text-ivory">
+              SAHARA LENZ
+            </h1>
           </div>
 
-          <span className="text-gold tracking-[0.4em] text-xs uppercase block pt-2">
-            Luxury Editorial Photography
-          </span>
-          <h1 className="font-serif text-5xl md:text-7xl tracking-wide uppercase text-ivory">
-            SAHARA LENZ
-          </h1>
           <p className="text-sand text-sm md:text-base font-light tracking-widest max-w-xl mx-auto">
             Mengabadikan setiap babak berharga dalam hidup Anda dengan sentuhan estetika visual yang abadi dan berkelas.
           </p>
