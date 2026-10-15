@@ -6,49 +6,31 @@ import BottomNav from "@/components/BottomNav";
 import { useState } from "react";
 
 export default function PortfolioPage() {
-  // Daftar kategori portofolio (Yudisium digabungkan/ditiadakan sesuai karya yang tersedia)
+  // Daftar kategori portofolio
   const categories = ["All", "Graduation", "Portrait", "Couple", "Friends", "Family", "Group"];
 
   // State untuk filter kategori aktif
   const [activeCategory, setActiveCategory] = useState("All");
 
-  // Data portofolio dengan foto wisuda asli dan placeholder profesional lainnya
+  // Data portofolio murni menggunakan foto wisuda asli milikmu
   const portfolioItems = [
     { 
       title: "Academic Milestone - Pink Kebaya", 
       category: "Graduation", 
-      img: "/grad-1.jpg", 
+      img: "/grad-1.JPG", 
       desc: "Momen wisuda penuh suka cita dengan balutan kebaya bernuansa merah muda dan toga yang elegan."
     },
     { 
       title: "The Graduate Honor", 
       category: "Graduation", 
-      img: "/grad-2.jpg", 
+      img: "/grad-2.JPG", 
       desc: "Potret khidmat wisudawati mengenakan toga lengkap dengan kalung medali universitas."
     },
     { 
       title: "Campus Elegance", 
       category: "Graduation", 
-      img: "/grad-3.jpg", 
+      img: "/grad-3.JPG", 
       desc: "Sesi potret kelulusan bernuansa klasik modern di area kampus dengan detail arsitektur yang estetik."
-    },
-    { 
-      title: "Editorial Portrait", 
-      category: "Portrait", 
-      img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop",
-      desc: "Sentuhan pencahayaan dramatis untuk menonjolkan karakter dan ekspresi personal."
-    },
-    { 
-      title: "Couple Session", 
-      category: "Couple", 
-      img: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?q=80&w=800&auto=format&fit=crop",
-      desc: "Mengabadikan keintiman dan ikatan emosional yang tulus dalam setiap jepretan."
-    },
-    { 
-      title: "Family Warmth", 
-      category: "Family", 
-      img: "https://images.unsplash.com/photo-1511895426328-dc8714191300?q=80&w=800&auto=format&fit=crop",
-      desc: "Kehangatan dan kebersamaan keluarga yang diabadikan secara natural dan abadi."
     },
   ];
 
