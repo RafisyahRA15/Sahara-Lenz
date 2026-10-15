@@ -1,53 +1,55 @@
+'use client'
+
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BottomNav from "@/components/BottomNav";
 
 export default function PackagesPage() {
   const packages = [
     {
       name: "The Essential",
       price: "Rp250.000 / jam",
-      desc: "Pilihan sederhana untuk mengabadikan momen penting dengan hasil yang tetap elegan dan berkesan.",
+      desc: "Pilihan terbaik dan ramah di kantong untuk sesi perorangan, bersama teman, atau keluarga dengan batasan pose dasar yang rapi.",
       features: [
-        "Fotografi individu",
-        "Arahan pose dasar",
-        "Foto formal dan candid",
-        "Pemilihan foto untuk editing sesuai kesepakatan",
-        "File digital hasil editing"
+        "Cocok untuk Sesi Perorangan, Teman, atau Keluarga",
+        "Arahan pose dasar dan terarah",
+        "Hasil foto formal dan candid natural",
+        "Pemilihan foto untuk di-editing",
+        "File digital hasil editing beresolusi tinggi"
       ],
-      whatsappText: "Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20memesan%20paket%20The%20Essential%20dengan%20harga%20Rp250.000/jam.%20Saya%20ingin%20bertanya%20mengenai%20jadwal%20dan%20detail%20sesi%20fotografi.%20Terima%20kasih."
+      whatsappText: "Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20memesan%20paket%20The%20Essential%20(Rp250.000/jam).%20Mohon%20informasi%20mengenai%20jadwal%20yang%20tersedia.%20Terima%20kasih."
     },
     {
       name: "The Signature",
       price: "Rp350.000 / jam",
       popular: true,
-      desc: "Pilihan untuk klien yang menginginkan variasi foto lebih banyak dari sisi pose, komposisi, dan suasana.",
+      desc: "Pilihan paling favorit! Bebas berekspresi dengan variasi pose yang jauh lebih keren, estetik, dan gaya editorial tingkat lanjut.",
       features: [
         "Semua fasilitas The Essential",
-        "Variasi pose dan komposisi yang lebih beragam",
-        "Foto bersama keluarga atau teman sesuai kebutuhan sesi",
-        "Perpaduan gaya formal, candid, dan editorial",
-        "Editing foto yang konsisten"
+        "Bebas eksplorasi gaya & pose yang lebih keren/kreatif",
+        "Kombinasi gaya formal, candid, dan editorial mewah",
+        "Arahan gaya personal agar hasil foto lebih berkarakter",
+        "Editing warna dan detail tingkat lanjut"
       ],
-      whatsappText: "Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20memesan%20paket%20The%20Signature%20dengan%20harga%20Rp350.000/jam.%20Saya%20ingin%20bertanya%20mengenai%20jadwal%20dan%20detail%20sesi%20fotografi.%20Terima%20kasih."
+      whatsappText: "Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20memesan%20paket%20The%20Signature%20(Rp350.000/jam).%20Mohon%20informasi%20mengenai%20jadwal%20yang%20tersedia.%20Terima%20kasih."
     },
     {
       name: "The Heirloom",
       price: "Rp500.000 / jam",
-      desc: "Pilihan premium untuk mengabadikan momen dengan pendekatan yang lebih personal dan perhatian lebih pada detail.",
+      desc: "Pilihan eksklusif premium untuk momen spesial dengan perhatian penuh pada detail dan konsep yang mendalam.",
       features: [
         "Semua fasilitas The Signature",
-        "Konsep sesi yang lebih personal",
-        "Variasi pose dan komposisi yang lebih luas",
-        "Durasi atau beberapa lokasi dapat dibicarakan sesuai kesepakatan",
-        "Perhatian lebih pada detail selama sesi",
-        "File digital hasil editing"
+        "Konsep pemotretan khusus dan personal",
+        "Variasi pose, sudut, dan komposisi tanpa batas",
+        "Durasi atau lokasi fleksibel sesuai kesepakatan",
+        "Prioritas tinggi pengerjaan editing file digital"
       ],
-      whatsappText: "Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20memesan%20paket%20The%20Heirloom%20dengan%20harga%20Rp500.000/jam.%20Saya%20ingin%20bertanya%20mengenai%20jadwal%20dan%20detail%20sesi%20fotografi.%20Terima%20kasih."
+      whatsappText: "Halo%20SAHARA%20LENZ!%20Saya%20tertarik%20memesan%20paket%20The%20Heirloom%20(Rp500.000/jam).%20Mohon%20informasi%20mengenai%20jadwal%20yang%20tersedia.%20Terima%20kasih."
     }
   ];
 
   return (
-    <main className="min-h-screen flex flex-col bg-charcoal text-ivory">
+    <main className="min-h-screen flex flex-col bg-charcoal text-ivory pb-16 md:pb-0">
       <Navbar />
 
       <section className="py-20 px-6 max-w-6xl mx-auto w-full flex-1">
@@ -118,6 +120,7 @@ export default function PackagesPage() {
       </section>
 
       <Footer />
+      <BottomNav />
     </main>
   );
 }
