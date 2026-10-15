@@ -29,9 +29,30 @@ export default function ClientGalleryPage() {
   const [activeTab, setActiveTab] = useState<'selection' | 'final'>('selection')
   const [downloadingAll, setDownloadingAll] = useState(false)
 
+  // State untuk Lightbox / Pratinjau Layar Penuh
+  const [currentIndex, setCurrentIndex] = useState<number | null>(null)
+
   useEffect(() => {
     fetchClientAndPhotos()
   }, [token])
+
+  // Event Keyboard untuk Navigasi Panah Kiri/Kanan di Modal Lightbox
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (currentIndex === null) return
+      const selectionPhotos = photos.filter(p => p.file_type === 'selection')
+      
+      if (e.key === 'ArrowRight') {
+        setCurrentIndex((prev) => (prev !== null && prev < selectionPhotos.length - 1 ? prev + 1 : prev))
+      } else if (e.key === 'ArrowLeft') {
+        setCurrentIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : prev))
+      } else if (e.key === 'Escape') {
+        setCurrentIndex(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentIndex, photos])
 
   async function fetchClientAndPhotos() {
     setLoading(true)
@@ -180,37 +201,45 @@ export default function ClientGalleryPage() {
               </button>
             </div>
 
-            {/* Tab 1: Photo Selection (Dilengkapi Watermark Halus di Tengah) */}
+            {/* Tab 1: Photo Selection */}
             {activeTab === 'selection' && (
               <div>
-                <div className="flex justify-between items-center mb-6 bg-[#F5F0E8]/5 p-4 rounded border border-[#B49A6C]/20">
-                  <p className="text-sm text-[#D9CBB8]">Klik pada foto untuk menandai sebagai foto favorit yang ingin diedit.</p>
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-6 bg-[#F5F0E8]/5 p-4 rounded border border-[#B49A6C]/20 gap-3">
+                  <p className="text-xs sm:text-sm text-[#D9CBB8]">Klik foto untuk melihat ukuran besar, geser antar foto, dan centang pilihan Anda.</p>
                   <button 
                     onClick={confirmSelection}
-                    className="bg-[#B49A6C] text-[#242321] px-5 py-2 text-xs uppercase tracking-widest font-medium hover:bg-[#F5F0E8] transition-all rounded"
+                    className="bg-[#B49A6C] text-[#242321] px-5 py-2 text-xs uppercase tracking-widest font-medium hover:bg-[#F5F0E8] transition-all rounded shrink-0"
                   >
                     Confirm Selection
                   </button>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {selectionPhotos.map(photo => (
+                  {selectionPhotos.map((photo, idx) => (
                     <div 
                       key={photo.id} 
-                      onClick={() => toggleSelectPhoto(photo.id, photo.is_selected)}
+                      onClick={() => setCurrentIndex(idx)}
                       className={`relative cursor-pointer group rounded overflow-hidden border-2 transition-all ${photo.is_selected ? 'border-[#B49A6C] scale-[0.98]' : 'border-transparent'}`}
                     >
                       <img src={photo.file_url} alt="Client Selection" className="w-full h-64 object-cover" />
                       
-                      {/* Watermark Halus di Tengah Foto Seleksi */}
+                      {/* Watermark Halus */}
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
                         <span className="text-white/30 font-serif tracking-[0.25em] text-xs sm:text-sm uppercase transform -rotate-12 px-2 py-1 bg-black/20 rounded">
                           SAHARA LENZ
                         </span>
                       </div>
 
-                      <div className={`absolute top-3 right-3 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${photo.is_selected ? 'bg-[#B49A6C] text-[#242321]' : 'bg-black/50 text-white border border-white/50'}`}>
-                        {photo.is_selected ? '✓' : ''}
+                      {/* Tombol Centang Cepat di Thumbnail */}
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleSelectPhoto(photo.id, photo.is_selected)
+                        }}
+                        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-md ${photo.is_selected ? 'bg-[#B49A6C] text-[#242321]' : 'bg-black/60 text-white border border-white/50 hover:bg-black'}`}
+                        title="Tandai untuk diedit"
+                      >
+                        {photo.is_selected ? '✓' : '+'}
                       </div>
                     </div>
                   ))}
@@ -218,7 +247,7 @@ export default function ClientGalleryPage() {
               </div>
             )}
 
-            {/* Tab 2: Final Edited Photos (Bersih tanpa watermark agar klien puas mendownload hasil akhir) */}
+            {/* Tab 2: Final Edited Photos */}
             {activeTab === 'final' && (
               <div>
                 {!isFinalPublished ? (
@@ -268,6 +297,70 @@ export default function ClientGalleryPage() {
           </>
         )}
       </div>
+
+      {/* MODAL LIGHTBOX / PRATINJAU FOTO UKURAN BESAR DENGAN TOMBOL NAVIGASI & SELECT */}
+      {currentIndex !== null && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-4">
+          {/* Tombol Tutup */}
+          <button 
+            onClick={() => setCurrentIndex(null)}
+            className="absolute top-4 right-6 text-white text-2xl font-serif bg-white/10 hover:bg-white/20 w-10 h-10 rounded-full flex items-center justify-center transition-all"
+          >
+            &times;
+          </button>
+
+          {/* Indikator Posisi Foto (Contoh: 15 / 700) */}
+          <div className="absolute top-4 left-6 text-xs tracking-widest text-[#D9CBB8]">
+            Foto {currentIndex + 1} dari {selectionPhotos.length}
+          </div>
+
+          {/* Kontainer Foto Utama */}
+          <div className="relative max-w-5xl max-h-[75vh] w-full flex items-center justify-center my-auto">
+            <img 
+              src={selectionPhotos[currentIndex].file_url} 
+              alt="Pratinjau Besar" 
+              className="max-h-[75vh] max-w-full object-contain rounded border border-[#B49A6C]/30"
+            />
+
+            {/* Tombol Panah Kiri (Sebelumnya) */}
+            {currentIndex > 0 && (
+              <button 
+                onClick={() => setCurrentIndex(currentIndex - 1)}
+                className="absolute left-2 md:-left-12 bg-black/60 hover:bg-[#B49A6C] hover:text-[#242321] text-white p-3 rounded-full transition-all text-lg font-bold"
+              >
+                &#10094;
+              </button>
+            )}
+
+            {/* Tombol Panah Kanan (Berikutnya) */}
+            {currentIndex < selectionPhotos.length - 1 && (
+              <button 
+                onClick={() => setCurrentIndex(currentIndex + 1)}
+                className="absolute right-2 md:-right-12 bg-black/60 hover:bg-[#B49A6C] hover:text-[#242321] text-white p-3 rounded-full transition-all text-lg font-bold"
+              >
+                &#10095;
+              </button>
+            )}
+          </div>
+
+          {/* Panel Bawah Modal: Tombol Pilih / Favorit & Keterangan */}
+          <div className="mt-4 flex flex-col sm:flex-row items-center gap-4 bg-black/40 px-6 py-3 rounded-full border border-[#B49A6C]/20">
+            <button
+              onClick={() => toggleSelectPhoto(selectionPhotos[currentIndex].id, selectionPhotos[currentIndex].is_selected)}
+              className={`px-6 py-2 rounded-full text-xs uppercase tracking-widest font-semibold transition-all flex items-center gap-2 ${
+                selectionPhotos[currentIndex].is_selected 
+                  ? 'bg-emerald-600 text-white' 
+                  : 'bg-[#B49A6C] text-[#242321] hover:bg-[#F5F0E8]'
+              }`}
+            >
+              {selectionPhotos[currentIndex].is_selected ? '✓ Terpilih untuk Diedit' : '＋ Pilih Foto Ini'}
+            </button>
+            <span className="text-[11px] text-[#D9CBB8]/70">
+              Tips: Gunakan tombol panah kiri / kanan di keyboard untuk geser cepat.
+            </span>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
