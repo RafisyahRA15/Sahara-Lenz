@@ -1,4 +1,4 @@
-Import Navbar from "@/components/Navbar";
+import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 
@@ -19,7 +19,16 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 max-w-3xl mx-auto space-y-6">
-          <span className="text-gold tracking-[0.4em] text-xs uppercase block">
+          {/* Logo Brand SAHARA LENZ */}
+          <div className="flex items-center justify-center">
+            <img 
+              src="/logo.png" 
+              alt="SAHARA LENZ Logo" 
+              className="h-16 md:h-20 w-auto object-contain" 
+            />
+          </div>
+
+          <span className="text-gold tracking-[0.4em] text-xs uppercase block pt-2">
             Luxury Editorial Photography
           </span>
           <h1 className="font-serif text-5xl md:text-7xl tracking-wide uppercase text-ivory">
