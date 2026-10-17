@@ -226,6 +226,36 @@ export default function AdminDashboard() {
     }
   }
 
+  // Fungsi untuk Membersihkan Nama File (Menghilangkan '_compressed', '_resized', dll agar sama persis dengan master asli)
+  function getCleanOriginalFilename(url: string) {
+    try {
+      const parts = url.split('/')
+      const fullNameWithTimestamp = parts[parts.length - 1] // Format: timestamp_IMG1168_compressed.jpg
+      let cleanName = fullNameWithTimestamp.substring(fullNameWithTimestamp.indexOf('_') + 1)
+      
+      cleanName = decodeURIComponent(cleanName)
+
+      // Membersihkan kata tambahan kompresi secara otomatis jika ada
+      cleanName = cleanName
+        .replace(/_compressed/gi, '')
+        .replace(/_resized/gi, '')
+        .replace(/_small/gi, '')
+        .replace(/-compressed/gi, '')
+        .replace(/-resized/gi, '')
+
+      return cleanName
+    } catch {
+      return 'foto_klien.jpg'
+    }
+  }
+
+  // Fungsi Salin Nama File Bersih ke Clipboard
+  function copyFilename(url: string) {
+    const filename = getCleanOriginalFilename(url)
+    navigator.clipboard.writeText(filename)
+    alert(`Nama file asli "${filename}" berhasil disalin! Silakan paste di folder master komputer Anda.`)
+  }
+
   if (!isAuthenticated) {
     return (
       <main className="min-h-screen bg-[#242321] text-[#F5F0E8] flex items-center justify-center p-6">
@@ -259,6 +289,7 @@ export default function AdminDashboard() {
   const activeClients = clients.filter(c => c.status !== 'Completed')
   const historyClients = clients.filter(c => c.status === 'Completed')
   const displayedClients = activeTabMenu === 'active' ? activeClients : historyClients
+  const selectedPhotosByClient = photos.filter(p => p.is_selected)
 
   return (
     <main className="min-h-screen bg-[#242321] text-[#F5F0E8] p-8">
@@ -330,7 +361,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Sisi Kanan: Detail Klien */}
-          <div className="lg:col-span-2 bg-[#F5F0E8]/5 p-6 rounded border border-[#B49A6C]/20">
+          <div className="lg:col-span-2 bg-[#F5F0E8]/5 p-6 rounded border border-[#B49A6C]/20 space-y-6">
             {selectedClient ? (
               <div>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -386,6 +417,38 @@ export default function AdminDashboard() {
                       </span>
                     )}
                   </div>
+                </div>
+
+                {/* PANEL KHUSUS DAFTAR FOTO PILIHAN KLIEN BESERTA NAMA BERSIH & TOMBOL SALIN */}
+                <div className="mb-8 bg-black/40 p-5 rounded border border-[#B49A6C]/30">
+                  <h3 className="text-xs uppercase tracking-widest text-[#B49A6C] mb-3 font-semibold">
+                    Daftar Foto Pilihan Klien ({selectedPhotosByClient.length} Foto) — Siap Dicari di Master Asli
+                  </h3>
+                  {selectedPhotosByClient.length === 0 ? (
+                    <p className="text-xs text-[#D9CBB8]/50 italic">Klien belum memilih foto atau belum ada foto selection yang dicentang.</p>
+                  ) : (
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                      {selectedPhotosByClient.map((photo, index) => {
+                        const cleanFilename = getCleanOriginalFilename(photo.file_url)
+                        return (
+                          <div key={photo.id} className="flex items-center justify-between bg-[#F5F0E8]/5 px-3 py-2 rounded border border-[#B49A6C]/10 text-xs">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <span className="text-[#B49A6C] font-mono">{index + 1}.</span>
+                              <span className="text-[#F5F0E8] font-mono truncate max-w-xs sm:max-w-md" title={cleanFilename}>
+                                {cleanFilename}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => copyFilename(photo.file_url)}
+                              className="bg-[#B49A6C]/20 hover:bg-[#B49A6C] text-[#B49A6C] hover:text-[#242321] px-3 py-1 rounded text-[11px] uppercase tracking-wider transition-all font-medium shrink-0 ml-2"
+                            >
+                              📋 Salin Nama Asli
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {activeTabMenu === 'active' && (
