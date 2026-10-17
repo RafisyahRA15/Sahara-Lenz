@@ -18,7 +18,7 @@ interface Photo {
   file_url: string
   file_type: 'selection' | 'final'
   is_selected: boolean
-  original_filename?: string // Menyimpan nama asli bersih dari database teks
+  original_filename?: string
 }
 
 export default function AdminDashboard() {
@@ -106,10 +106,8 @@ export default function AdminDashboard() {
     for (let i = 0; i < totalFiles; i++) {
       const file = files[i]
       
-      // Ambil nama file asli saat dipilih dari HP
       const rawOriginalName = file.name || `foto_${Date.now()}.jpg`
 
-      // Path unik untuk Supabase Storage agar tidak bentrok
       const fileExt = rawOriginalName.substring(rawOriginalName.lastIndexOf('.')) || '.jpg'
       const uniqueStorageName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}${fileExt}`
       const storagePath = `${selectedClient.id}/${uniqueStorageName}`
@@ -123,7 +121,6 @@ export default function AdminDashboard() {
         const { data: publicURLData } = supabase.storage.from('client-uploads').getPublicUrl(storagePath)
         const file_url = publicURLData.publicUrl
 
-        // Masukkan ke database: URL gambar dan nama asli bersih ke kolom `original_filename`
         await supabase.from('client_photos').insert([
           { 
             client_id: selectedClient.id, 
@@ -240,7 +237,6 @@ export default function AdminDashboard() {
     }
   }
 
-  // Fungsi untuk Membersihkan Nama File dari Ekstensi Tambahan/_copy jika diperlukan
   function getCleanOriginalFilename(photo: Photo) {
     try {
       let fullName = photo.original_filename || 'foto_klien.jpg'
@@ -263,7 +259,6 @@ export default function AdminDashboard() {
     }
   }
 
-  // Fungsi Salin Nama File langsung dari Database Teks `original_filename`
   function copyFilename(photo: Photo) {
     const filename = getCleanOriginalFilename(photo)
     navigator.clipboard.writeText(filename)
@@ -482,11 +477,25 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                       <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
                         <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Mentah (Selection)</p>
-                        <input type="file" accept="image/*" multiple onChange={e => handleFileUpload(e, 'selection')} disabled={uploading} className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" />
+                        <input 
+                          type="file" 
+                          accept="image/jpeg" 
+                          multiple 
+                          onChange={e => handleFileUpload(e, 'selection')} 
+                          disabled={uploading} 
+                          className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" 
+                        />
                       </div>
                       <div className="border border-dashed border-[#B49A6C]/40 p-4 rounded text-center bg-black/20">
                         <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Edit Final</p>
-                        <input type="file" accept="image/*" multiple onChange={e => handleFileUpload(e, 'final')} disabled={uploading} className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" />
+                        <input 
+                          type="file" 
+                          accept="image/jpeg" 
+                          multiple 
+                          onChange={e => handleFileUpload(e, 'final')} 
+                          disabled={uploading} 
+                          className="text-xs text-[#D9CBB8] file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#B49A6C] file:text-[#242321] cursor-pointer" 
+                        />
                       </div>
                     </div>
                   </>
