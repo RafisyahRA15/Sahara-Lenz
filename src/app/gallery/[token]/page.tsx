@@ -36,6 +36,23 @@ export default function ClientGalleryPage() {
     fetchClientAndPhotos()
   }, [token])
 
+  // PRELOAD GAMBAR: Pramuat gambar sebelum & sesudahnya agar transisi lightbox anti-ngelag / kosong
+  useEffect(() => {
+    if (currentIndex === null) return
+    const selectionPhotos = photos.filter(p => p.file_type === 'selection')
+
+    // Pramuat foto berikutnya
+    if (currentIndex < selectionPhotos.length - 1) {
+      const nextImg = new Image()
+      nextImg.src = selectionPhotos[currentIndex + 1].file_url
+    }
+    // Pramuat foto sebelumnya
+    if (currentIndex > 0) {
+      const prevImg = new Image()
+      prevImg.src = selectionPhotos[currentIndex - 1].file_url
+    }
+  }, [currentIndex, photos])
+
   // Event Keyboard untuk Navigasi Panah Kiri/Kanan di Modal Lightbox
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -221,7 +238,6 @@ export default function ClientGalleryPage() {
                       onClick={() => setCurrentIndex(idx)}
                       className={`relative cursor-pointer group rounded overflow-hidden border-2 transition-all ${photo.is_selected ? 'border-[#B49A6C] scale-[0.98]' : 'border-transparent'}`}
                     >
-                      {/* LAZY LOADING DITAMBAHKAN DI SINI */}
                       <img 
                         src={photo.file_url} 
                         alt="Client Selection" 
@@ -284,7 +300,6 @@ export default function ClientGalleryPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {finalPhotos.map(photo => (
                         <div key={photo.id} className="relative group rounded overflow-hidden border border-[#B49A6C]/30">
-                          {/* LAZY LOADING DITAMBAHKAN DI SINI JUGA */}
                           <img 
                             src={photo.file_url} 
                             alt="Final Edited" 
