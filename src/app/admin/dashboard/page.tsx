@@ -90,7 +90,7 @@ export default function AdminDashboard() {
     if (data) setPhotos(data)
   }
 
-  // UPLOAD MURNI MENGGUNAKAN file.name TANPA ADA ANGKA ACAK ATAU TIMESTAMP
+  // PERBAIKAN MUTLAK: Memastikan nama file diambil apa adanya dari file.name tanpa modifikasi
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, fileType: 'selection' | 'final') {
     if (!selectedClient || !e.target.files || e.target.files.length === 0) return
     
@@ -105,8 +105,10 @@ export default function AdminDashboard() {
     for (let i = 0; i < totalFiles; i++) {
       const file = files[i]
       
-      // MURNI NAMA ASLI FILE TANPA TAMBAHAN APA PUN DI DEPANNYA
-      const fileName = `${selectedClient.id}/${file.name}`
+      // Mengambil nama asli dari file yang dipilih
+      let safeFileName = file.name || `photo_${Date.now()}.jpg`
+
+      const fileName = `${selectedClient.id}/${safeFileName}`
 
       const { error: uploadError } = await supabase.storage.from('client-uploads').upload(fileName, file, {
         cacheControl: '3600',
