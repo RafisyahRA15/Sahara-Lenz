@@ -90,7 +90,7 @@ export default function AdminDashboard() {
     if (data) setPhotos(data)
   }
 
-  // Fungsi Upload dengan Kalkulasi Persentase Akurat
+  // Fungsi Upload dengan Mempertahankan Nama Asli File Tanpa Acak Timestamp
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, fileType: 'selection' | 'final') {
     if (!selectedClient || !e.target.files || e.target.files.length === 0) return
     
@@ -104,11 +104,12 @@ export default function AdminDashboard() {
 
     for (let i = 0; i < totalFiles; i++) {
       const file = files[i]
-      const fileName = `${selectedClient.id}/${Date.now()}_${file.name}`
+      // Menggunakan nama asli file yang diupload agar mudah dilacak
+      const fileName = `${selectedClient.id}/${file.name}`
 
       const { error: uploadError } = await supabase.storage.from('client-uploads').upload(fileName, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: true
       })
       
       if (!uploadError) {
@@ -226,24 +227,28 @@ export default function AdminDashboard() {
     }
   }
 
-  // Fungsi untuk Membersihkan Nama File (Menghilangkan '_compressed', '_resized', dll agar sama persis dengan master asli)
+  // Fungsi untuk Membersihkan Nama File secara Akurat (Membuang _copy, resolusi ukuran, dll)
   function getCleanOriginalFilename(url: string) {
     try {
       const parts = url.split('/')
-      const fullNameWithTimestamp = parts[parts.length - 1] // Format: timestamp_IMG1168_compressed.jpg
-      let cleanName = fullNameWithTimestamp.substring(fullNameWithTimestamp.indexOf('_') + 1)
+      let fullName = parts[parts.length - 1] // Contoh: IMG09333_copy_3660x5490.jpg
       
-      cleanName = decodeURIComponent(cleanName)
+      fullName = decodeURIComponent(fullName)
 
-      // Membersihkan kata tambahan kompresi secara otomatis jika ada
-      cleanName = cleanName
+      // Menghilangkan ekstensi dulu untuk mempermudah pembersihan
+      const lastDotIndex = fullName.lastIndexOf('.')
+      let nameWithoutExt = lastDotIndex !== -1 ? fullName.substring(0, lastDotIndex) : fullName
+      let ext = lastDotIndex !== -1 ? fullName.substring(lastDotIndex) : '.jpg'
+
+      // Membersihkan kata tambahan seperti _copy, resolusi ukuran, _compressed, dll
+      nameWithoutExt = nameWithoutExt
+        .replace(/_copy.*$/gi, '')
+        .replace(/_\d+x\d+.*/gi, '')
         .replace(/_compressed/gi, '')
         .replace(/_resized/gi, '')
         .replace(/_small/gi, '')
-        .replace(/-compressed/gi, '')
-        .replace(/-resized/gi, '')
 
-      return cleanName
+      return nameWithoutExt + ext
     } catch {
       return 'foto_klien.jpg'
     }
