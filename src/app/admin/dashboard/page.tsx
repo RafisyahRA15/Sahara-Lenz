@@ -90,7 +90,7 @@ export default function AdminDashboard() {
     if (data) setPhotos(data)
   }
 
-  // Fungsi Upload dengan Mempertahankan Nama Asli File Tanpa Acak Timestamp
+  // UPLOAD MURNI MENGGUNAKAN file.name TANPA ADA ANGKA ACAK ATAU TIMESTAMP
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, fileType: 'selection' | 'final') {
     if (!selectedClient || !e.target.files || e.target.files.length === 0) return
     
@@ -104,7 +104,8 @@ export default function AdminDashboard() {
 
     for (let i = 0; i < totalFiles; i++) {
       const file = files[i]
-      // Menggunakan nama asli file yang diupload agar mudah dilacak
+      
+      // MURNI NAMA ASLI FILE TANPA TAMBAHAN APA PUN DI DEPANNYA
       const fileName = `${selectedClient.id}/${file.name}`
 
       const { error: uploadError } = await supabase.storage.from('client-uploads').upload(fileName, file, {
@@ -124,7 +125,6 @@ export default function AdminDashboard() {
         console.error('Gagal upload file:', uploadError.message)
       }
 
-      // Hitung persentase real-time
       const currentProgress = i + 1
       const calculatedPercent = Math.round((currentProgress / totalFiles) * 100)
       setUploadProgress({ current: currentProgress, total: totalFiles, percent: calculatedPercent })
@@ -227,20 +227,18 @@ export default function AdminDashboard() {
     }
   }
 
-  // Fungsi untuk Membersihkan Nama File secara Akurat (Membuang _copy, resolusi ukuran, dll)
+  // Fungsi untuk Membersihkan Nama File dari Ekstensi Tambahan/_copy
   function getCleanOriginalFilename(url: string) {
     try {
       const parts = url.split('/')
-      let fullName = parts[parts.length - 1] // Contoh: IMG09333_copy_3660x5490.jpg
+      let fullName = parts[parts.length - 1] // Contoh: IMG09333_copy.jpg
       
       fullName = decodeURIComponent(fullName)
 
-      // Menghilangkan ekstensi dulu untuk mempermudah pembersihan
       const lastDotIndex = fullName.lastIndexOf('.')
       let nameWithoutExt = lastDotIndex !== -1 ? fullName.substring(0, lastDotIndex) : fullName
       let ext = lastDotIndex !== -1 ? fullName.substring(lastDotIndex) : '.jpg'
 
-      // Membersihkan kata tambahan seperti _copy, resolusi ukuran, _compressed, dll
       nameWithoutExt = nameWithoutExt
         .replace(/_copy.*$/gi, '')
         .replace(/_\d+x\d+.*/gi, '')
@@ -254,7 +252,7 @@ export default function AdminDashboard() {
     }
   }
 
-  // Fungsi Salin Nama File Bersih ke Clipboard
+  // Fungsi Salin Nama File
   function copyFilename(url: string) {
     const filename = getCleanOriginalFilename(url)
     navigator.clipboard.writeText(filename)
@@ -371,7 +369,6 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                   <div>
-                    {/* NAMA KLIEN DENGAN FITUR RAHASIA (KLIK 3 KALI) */}
                     <h2 
                       onClick={() => {
                         if (activeTabMenu === 'history') {
@@ -384,7 +381,6 @@ export default function AdminDashboard() {
                         }
                       }}
                       className={`text-2xl font-serif text-[#B49A6C] select-none ${activeTabMenu === 'history' ? 'cursor-pointer' : ''}`}
-                      title={activeTabMenu === 'history' ? 'Ketuk 3 kali...' : ''}
                     >
                       {selectedClient.name}
                     </h2>
@@ -393,7 +389,6 @@ export default function AdminDashboard() {
                     <p className="text-xs text-[#D9CBB8]/70 mt-1">Status: <span className="text-[#B49A6C] font-semibold">{selectedClient.status}</span></p>
                     <p className="text-xs text-[#D9CBB8]/70 mt-1">Tautan Galeri: <a href={`/gallery/${selectedClient.token}`} target="_blank" className="text-[#B49A6C] underline">/gallery/{selectedClient.token}</a></p>
                     
-                    {/* TOMBOL HAPUS RAHASIA */}
                     {isSecretDeleteUnlocked && (
                       <div className="mt-3">
                         <button 
@@ -418,13 +413,13 @@ export default function AdminDashboard() {
                     )}
                     {activeTabMenu === 'history' && (
                       <span className="text-xs bg-emerald-900/50 text-emerald-300 px-3 py-2 rounded border border-emerald-500/30">
-                        ✓ Pesanan Selesai (File foto telah dibersihkan)
+                        ✓ Pesanan Selesai
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* PANEL KHUSUS DAFTAR FOTO PILIHAN KLIEN BESERTA NAMA BERSIH & TOMBOL SALIN */}
+                {/* PANEL FOTO PILIHAN KLIEN */}
                 <div className="mb-8 bg-black/40 p-5 rounded border border-[#B49A6C]/30">
                   <h3 className="text-xs uppercase tracking-widest text-[#B49A6C] mb-3 font-semibold">
                     Daftar Foto Pilihan Klien ({selectedPhotosByClient.length} Foto) — Siap Dicari di Master Asli
@@ -458,7 +453,6 @@ export default function AdminDashboard() {
 
                 {activeTabMenu === 'active' && (
                   <>
-                    {/* PROGRESS BAR & PERSENTASE UPLOAD */}
                     {uploading && (
                       <div className="mb-6 p-4 bg-[#B49A6C]/10 border border-[#B49A6C]/40 rounded space-y-2">
                         <div className="flex justify-between text-xs text-[#B49A6C] font-medium uppercase tracking-wider">
@@ -471,9 +465,6 @@ export default function AdminDashboard() {
                             style={{ width: `${uploadProgress.percent}%` }}
                           ></div>
                         </div>
-                        <p className="text-[11px] text-[#D9CBB8]/60 italic">
-                          Mohon jangan menutup halaman ini sampai proses unggah selesai.
-                        </p>
                       </div>
                     )}
 
@@ -491,14 +482,10 @@ export default function AdminDashboard() {
                 )}
 
                 <h3 className="text-sm uppercase tracking-widest text-[#B49A6C] mb-2">Galeri Foto Klien</h3>
-                <p className="text-xs text-[#D9CBB8]/60 mb-4">
-                  {activeTabMenu === 'active' ? 'Ketuk foto untuk preview.' : 'Foto pada klien di History telah dihapus otomatis untuk menghemat penyimpanan.'}
-                </p>
-                
                 <div className="grid grid-cols-3 gap-4 max-h-[350px] overflow-y-auto pr-2">
                   {photos.length === 0 ? (
                     <div className="col-span-3 text-center py-12 text-[#D9CBB8]/40 text-xs italic">
-                      Tidak ada foto di galeri (sudah diarsipkan/dibersihkan).
+                      Tidak ada foto di galeri.
                     </div>
                   ) : (
                     photos.map(p => (
@@ -518,7 +505,7 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div className="text-center py-32 text-[#D9CBB8]/50 font-serif">
-                Pilih salah satu klien dari daftar Aktif atau History di sebelah kiri untuk melihat detail informasi ordernya.
+                Pilih salah satu klien dari daftar Aktif atau History di sebelah kiri.
               </div>
             )}
           </div>
@@ -538,7 +525,7 @@ export default function AdminDashboard() {
               download 
               className="bg-[#B49A6C] text-[#242321] px-6 py-2 text-xs uppercase tracking-widest font-semibold rounded hover:bg-[#F5F0E8] transition-all"
             >
-              Download Foto Ini (Resolusi Asli)
+              Download Foto Ini
             </a>
             <button 
               onClick={() => setPreviewPhoto(null)} 
