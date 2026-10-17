@@ -18,6 +18,7 @@ interface Photo {
   file_url: string
   file_type: 'selection' | 'final'
   is_selected: boolean
+  original_filename?: string // Menyimpan nama asli bersih dari database teks
 }
 
 export default function AdminDashboard() {
@@ -90,7 +91,7 @@ export default function AdminDashboard() {
     if (data) setPhotos(data)
   }
 
-  // PERBAIKAN MUTLAK: Memastikan nama file diambil apa adanya dari file.name tanpa modifikasi
+  // UPLOAD: Menyimpan file ke storage dengan nama unik, TETAPI MENCATAT `file.name` ASLI KE DATABASE TEKS
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, fileType: 'selection' | 'final') {
     if (!selectedClient || !e.target.files || e.target.files.length === 0) return
     
@@ -105,22 +106,32 @@ export default function AdminDashboard() {
     for (let i = 0; i < totalFiles; i++) {
       const file = files[i]
       
-      // Mengambil nama asli dari file yang dipilih
-      let safeFileName = file.name || `photo_${Date.now()}.jpg`
+      // Ambil nama file asli saat dipilih dari HP
+      const rawOriginalName = file.name || `foto_${Date.now()}.jpg`
 
-      const fileName = `${selectedClient.id}/${safeFileName}`
+      // Path unik untuk Supabase Storage agar tidak bentrok
+      const fileExt = rawOriginalName.substring(rawOriginalName.lastIndexOf('.')) || '.jpg'
+      const uniqueStorageName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}${fileExt}`
+      const storagePath = `${selectedClient.id}/${uniqueStorageName}`
 
-      const { error: uploadError } = await supabase.storage.from('client-uploads').upload(fileName, file, {
+      const { error: uploadError } = await supabase.storage.from('client-uploads').upload(storagePath, file, {
         cacheControl: '3600',
         upsert: true
       })
       
       if (!uploadError) {
-        const { data: publicURLData } = supabase.storage.from('client-uploads').getPublicUrl(fileName)
+        const { data: publicURLData } = supabase.storage.from('client-uploads').getPublicUrl(storagePath)
         const file_url = publicURLData.publicUrl
 
+        // Masukkan ke database: URL gambar dan nama asli bersih ke kolom `original_filename`
         await supabase.from('client_photos').insert([
-          { client_id: selectedClient.id, file_url, file_type: fileType, is_selected: false }
+          { 
+            client_id: selectedClient.id, 
+            file_url, 
+            file_type: fileType, 
+            is_selected: false,
+            original_filename: rawOriginalName 
+          }
         ])
         successCount++
       } else {
@@ -133,7 +144,7 @@ export default function AdminDashboard() {
     }
 
     setUploading(false)
-    alert(`Selesai! ${successCount} dari ${totalFiles} foto berhasil diunggah.`)
+    alert(`Selesai! ${successCount} dari ${totalFiles} foto berhasil diunggah dengan nama asli tercatat.`)
     selectClient(selectedClient)
   }
 
@@ -213,7 +224,7 @@ export default function AdminDashboard() {
         const url = window.URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = `pilihan_klien_${i + 1}.jpg`
+        a.download = photo.original_filename || `pilihan_klien_${i + 1}.jpg`
         document.body.appendChild(a)
         a.click()
         window.URL.revokeObjectURL(url)
@@ -229,12 +240,10 @@ export default function AdminDashboard() {
     }
   }
 
-  // Fungsi untuk Membersihkan Nama File dari Ekstensi Tambahan/_copy
-  function getCleanOriginalFilename(url: string) {
+  // Fungsi untuk Membersihkan Nama File dari Ekstensi Tambahan/_copy jika diperlukan
+  function getCleanOriginalFilename(photo: Photo) {
     try {
-      const parts = url.split('/')
-      let fullName = parts[parts.length - 1] // Contoh: IMG09333_copy.jpg
-      
+      let fullName = photo.original_filename || 'foto_klien.jpg'
       fullName = decodeURIComponent(fullName)
 
       const lastDotIndex = fullName.lastIndexOf('.')
@@ -254,9 +263,9 @@ export default function AdminDashboard() {
     }
   }
 
-  // Fungsi Salin Nama File
-  function copyFilename(url: string) {
-    const filename = getCleanOriginalFilename(url)
+  // Fungsi Salin Nama File langsung dari Database Teks `original_filename`
+  function copyFilename(photo: Photo) {
+    const filename = getCleanOriginalFilename(photo)
     navigator.clipboard.writeText(filename)
     alert(`Nama file asli "${filename}" berhasil disalin! Silakan paste di folder master komputer Anda.`)
   }
@@ -431,17 +440,17 @@ export default function AdminDashboard() {
                   ) : (
                     <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                       {selectedPhotosByClient.map((photo, index) => {
-                        const cleanFilename = getCleanOriginalFilename(photo.file_url)
+                        const cleanName = getCleanOriginalFilename(photo)
                         return (
                           <div key={photo.id} className="flex items-center justify-between bg-[#F5F0E8]/5 px-3 py-2 rounded border border-[#B49A6C]/10 text-xs">
                             <div className="flex items-center gap-3 overflow-hidden">
                               <span className="text-[#B49A6C] font-mono">{index + 1}.</span>
-                              <span className="text-[#F5F0E8] font-mono truncate max-w-xs sm:max-w-md" title={cleanFilename}>
-                                {cleanFilename}
+                              <span className="text-[#F5F0E8] font-mono truncate max-w-xs sm:max-w-md" title={cleanName}>
+                                {cleanName}
                               </span>
                             </div>
                             <button
-                              onClick={() => copyFilename(photo.file_url)}
+                              onClick={() => copyFilename(photo)}
                               className="bg-[#B49A6C]/20 hover:bg-[#B49A6C] text-[#B49A6C] hover:text-[#242321] px-3 py-1 rounded text-[11px] uppercase tracking-wider transition-all font-medium shrink-0 ml-2"
                             >
                               📋 Salin Nama Asli
