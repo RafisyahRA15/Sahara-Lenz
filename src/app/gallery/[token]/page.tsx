@@ -36,23 +36,6 @@ export default function ClientGalleryPage() {
     fetchClientAndPhotos()
   }, [token])
 
-  // PRELOAD GAMBAR: Pramuat gambar sebelum & sesudahnya agar transisi lightbox anti-ngelag / kosong
-  useEffect(() => {
-    if (currentIndex === null) return
-    const selectionPhotos = photos.filter(p => p.file_type === 'selection')
-
-    // Pramuat foto berikutnya
-    if (currentIndex < selectionPhotos.length - 1) {
-      const nextImg = new Image()
-      nextImg.src = selectionPhotos[currentIndex + 1].file_url
-    }
-    // Pramuat foto sebelumnya
-    if (currentIndex > 0) {
-      const prevImg = new Image()
-      prevImg.src = selectionPhotos[currentIndex - 1].file_url
-    }
-  }, [currentIndex, photos])
-
   // Event Keyboard untuk Navigasi Panah Kiri/Kanan di Modal Lightbox
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -130,20 +113,25 @@ export default function ClientGalleryPage() {
     alert(`Mengunduh ${finalPhotos.length} foto final ke perangkat Anda. Mohon tunggu sebentar...`)
 
     try {
-      for (let i = 0; i < finalPhotos.length; i++) {
-        const photo = finalPhotos[i]
-        const response = await fetch(photo.file_url)
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `SAHARA_LENZ_Final_${i + 1}.jpg`
-        document.body.appendChild(a)
-        a.click()
-        window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
-        
-        await new Promise(resolve => setTimeout(resolve, 300))
+      const concurrencyLimit = 5
+      for (let i = 0; i < finalPhotos.length; i += concurrencyLimit) {
+        const chunk = finalPhotos.slice(i, i + concurrencyLimit)
+
+        await Promise.all(chunk.map(async (photo, indexInChunk) => {
+          const globalIndex = i + indexInChunk
+          const response = await fetch(photo.file_url)
+          const blob = await response.blob()
+          const url = window.URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `SAHARA_LENZ_Final_${globalIndex + 1}.jpg`
+          document.body.appendChild(a)
+          a.click()
+          window.URL.revokeObjectURL(url)
+          document.body.removeChild(a)
+        }))
+
+        await new Promise(resolve => setTimeout(resolve, 200))
       }
       alert('Semua foto final berhasil diunduh!')
     } catch (error) {
@@ -238,10 +226,10 @@ export default function ClientGalleryPage() {
                       onClick={() => setCurrentIndex(idx)}
                       className={`relative cursor-pointer group rounded overflow-hidden border-2 transition-all ${photo.is_selected ? 'border-[#B49A6C] scale-[0.98]' : 'border-transparent'}`}
                     >
+                      {/* Render langsung tanpa lazy loading agar stabil saat preview */}
                       <img 
                         src={photo.file_url} 
                         alt="Client Selection" 
-                        loading="lazy" 
                         className="w-full h-64 object-cover" 
                       />
                       
@@ -303,7 +291,6 @@ export default function ClientGalleryPage() {
                           <img 
                             src={photo.file_url} 
                             alt="Final Edited" 
-                            loading="lazy" 
                             className="w-full h-64 object-cover" 
                           />
                           <a 
@@ -336,7 +323,7 @@ export default function ClientGalleryPage() {
             &times;
           </button>
 
-          {/* Indikator Posisi Foto (Contoh: 15 / 700) */}
+          {/* Indikator Posisi Foto */}
           <div className="absolute top-4 left-6 text-xs tracking-widest text-[#D9CBB8]">
             Foto {currentIndex + 1} dari {selectionPhotos.length}
           </div>
