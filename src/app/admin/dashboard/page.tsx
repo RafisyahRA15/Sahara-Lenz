@@ -479,7 +479,6 @@ export default function AdminDashboard() {
                         <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Mentah (Selection)</p>
                         <input 
                           type="file" 
-                          accept="image/jpeg" 
                           multiple 
                           onChange={e => handleFileUpload(e, 'selection')} 
                           disabled={uploading} 
@@ -490,7 +489,6 @@ export default function AdminDashboard() {
                         <p className="text-xs mb-2 text-[#D9CBB8] font-medium">Upload Foto Edit Final</p>
                         <input 
                           type="file" 
-                          accept="image/jpeg" 
                           multiple 
                           onChange={e => handleFileUpload(e, 'final')} 
                           disabled={uploading} 
