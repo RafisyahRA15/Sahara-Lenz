@@ -221,7 +221,13 @@ export default function ClientGalleryPage() {
                       onClick={() => setCurrentIndex(idx)}
                       className={`relative cursor-pointer group rounded overflow-hidden border-2 transition-all ${photo.is_selected ? 'border-[#B49A6C] scale-[0.98]' : 'border-transparent'}`}
                     >
-                      <img src={photo.file_url} alt="Client Selection" className="w-full h-64 object-cover" />
+                      {/* LAZY LOADING DITAMBAHKAN DI SINI */}
+                      <img 
+                        src={photo.file_url} 
+                        alt="Client Selection" 
+                        loading="lazy" 
+                        className="w-full h-64 object-cover" 
+                      />
                       
                       {/* Watermark Halus */}
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
@@ -278,7 +284,13 @@ export default function ClientGalleryPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {finalPhotos.map(photo => (
                         <div key={photo.id} className="relative group rounded overflow-hidden border border-[#B49A6C]/30">
-                          <img src={photo.file_url} alt="Final Edited" className="w-full h-64 object-cover" />
+                          {/* LAZY LOADING DITAMBAHKAN DI SINI JUGA */}
+                          <img 
+                            src={photo.file_url} 
+                            alt="Final Edited" 
+                            loading="lazy" 
+                            className="w-full h-64 object-cover" 
+                          />
                           <a 
                             href={photo.file_url} 
                             target="_blank" 
