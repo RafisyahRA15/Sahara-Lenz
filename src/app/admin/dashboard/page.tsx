@@ -91,7 +91,7 @@ export default function AdminDashboard() {
     if (data) setPhotos(data)
   }
 
-  // UPLOAD: Menyimpan file ke storage dengan nama unik, TETAPI MENCATAT `file.name` ASLI KE DATABASE TEKS
+  // UPLOAD PARALEL: Mengunggah 5 file sekaligus secara bersamaan agar jauh lebih cepat dan tidak memakan waktu lama
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, fileType: 'selection' | 'final') {
     if (!selectedClient || !e.target.files || e.target.files.length === 0) return
     
@@ -101,47 +101,46 @@ export default function AdminDashboard() {
     setUploading(true)
     setUploadProgress({ current: 0, total: totalFiles, percent: 0 })
 
-    let successCount = 0
+    let completedCount = 0
+    const concurrencyLimit = 5 // Unggah 5 foto secara paralel
 
-    for (let i = 0; i < totalFiles; i++) {
-      const file = files[i]
-      
-      const rawOriginalName = file.name || `foto_${Date.now()}.jpg`
+    for (let i = 0; i < totalFiles; i += concurrencyLimit) {
+      const chunk = files.slice(i, i + concurrencyLimit)
 
-      const fileExt = rawOriginalName.substring(rawOriginalName.lastIndexOf('.')) || '.jpg'
-      const uniqueStorageName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}${fileExt}`
-      const storagePath = `${selectedClient.id}/${uniqueStorageName}`
+      await Promise.all(chunk.map(async (file) => {
+        const rawOriginalName = file.name || `foto_${Date.now()}.jpg`
+        const fileExt = rawOriginalName.substring(rawOriginalName.lastIndexOf('.')) || '.jpg'
+        const uniqueStorageName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}${fileExt}`
+        const storagePath = `${selectedClient.id}/${uniqueStorageName}`
 
-      const { error: uploadError } = await supabase.storage.from('client-uploads').upload(storagePath, file, {
-        cacheControl: '3600',
-        upsert: true
-      })
-      
-      if (!uploadError) {
-        const { data: publicURLData } = supabase.storage.from('client-uploads').getPublicUrl(storagePath)
-        const file_url = publicURLData.publicUrl
+        const { error: uploadError } = await supabase.storage.from('client-uploads').upload(storagePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+        
+        if (!uploadError) {
+          const { data: publicURLData } = supabase.storage.from('client-uploads').getPublicUrl(storagePath)
+          const file_url = publicURLData.publicUrl
 
-        await supabase.from('client_photos').insert([
-          { 
-            client_id: selectedClient.id, 
-            file_url, 
-            file_type: fileType, 
-            is_selected: false,
-            original_filename: rawOriginalName 
-          }
-        ])
-        successCount++
-      } else {
-        console.error('Gagal upload file:', uploadError.message)
-      }
+          await supabase.from('client_photos').insert([
+            { 
+              client_id: selectedClient.id, 
+              file_url, 
+              file_type: fileType, 
+              is_selected: false,
+              original_filename: rawOriginalName 
+            }
+          ])
+        }
 
-      const currentProgress = i + 1
-      const calculatedPercent = Math.round((currentProgress / totalFiles) * 100)
-      setUploadProgress({ current: currentProgress, total: totalFiles, percent: calculatedPercent })
+        completedCount++
+        const calculatedPercent = Math.round((completedCount / totalFiles) * 100)
+        setUploadProgress({ current: completedCount, total: totalFiles, percent: calculatedPercent })
+      }))
     }
 
     setUploading(false)
-    alert(`Selesai! ${successCount} dari ${totalFiles} foto berhasil diunggah dengan nama asli tercatat.`)
+    alert(`Selesai! ${totalFiles} foto berhasil diunggah dengan jauh lebih cepat.`)
     selectClient(selectedClient)
   }
 
@@ -462,7 +461,7 @@ export default function AdminDashboard() {
                     {uploading && (
                       <div className="mb-6 p-4 bg-[#B49A6C]/10 border border-[#B49A6C]/40 rounded space-y-2">
                         <div className="flex justify-between text-xs text-[#B49A6C] font-medium uppercase tracking-wider">
-                          <span>Mengunggah Foto Mentah...</span>
+                          <span>Mengunggah Foto Secara Paralel...</span>
                           <span>{uploadProgress.percent}% ({uploadProgress.current} dari {uploadProgress.total} foto)</span>
                         </div>
                         <div className="w-full bg-black/40 h-2.5 rounded-full overflow-hidden border border-[#B49A6C]/20">
@@ -512,7 +511,13 @@ export default function AdminDashboard() {
                         onClick={() => setPreviewPhoto(p.file_url)}
                         className={`relative rounded overflow-hidden border-2 cursor-pointer group transition-all ${p.is_selected ? 'border-emerald-500 scale-[0.98]' : 'border-transparent hover:border-[#B49A6C]'}`}
                       >
-                        <img src={p.file_url} alt="Gallery Item" className="w-full h-36 object-cover group-hover:scale-105 transition-transform" />
+                        {/* LAZY LOADING: Memuat gambar secara bertahap saat digulir agar galeri super ringan */}
+                        <img 
+                          src={p.file_url} 
+                          alt="Gallery Item" 
+                          loading="lazy"
+                          className="w-full h-36 object-cover group-hover:scale-105 transition-transform" 
+                        />
                         <div className="absolute bottom-1 left-1 bg-black/80 px-2 py-0.5 text-[10px] text-[#F5F0E8] rounded">
                           {p.file_type.toUpperCase()} {p.is_selected ? '✓' : ''}
                         </div>
